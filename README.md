@@ -36,6 +36,67 @@ invictae --help
 From source: `git clone … && npm install && npm run build && npm link`.
 Configuration: copy `.env.example` to `.env` — public RPC fallbacks work out of the box; `PRIVATE_KEY` is only needed for signing commands.
 
+## Examples
+
+```bash
+# Quote: positional form — AMOUNT  PAY@CHAIN  RECEIVE@CHAIN
+invictae quote 100 usdc@base eth@arbitrum
+
+# Native in, native out: ETH on Base becomes ETH on Arbitrum
+invictae swap 0.5 eth@base eth@arbitrum
+
+# Buy a tokenized stock with USDT (chain aliases work: eth, bsc, arb, op…)
+invictae quote 1000 usdt@eth TSLAon@eth
+
+# Exact-out: "I want exactly 0.1 ETH on Arbitrum, tell me what it costs"
+invictae quote 0.1 usdc@base eth@arbitrum --exact-out
+
+# Bridge-only: move dollars between chains, no swap (receive the stable itself)
+invictae swap 500 usdc@base usdc@optimism
+
+# Long-tail ticker: resolved via CoinGecko, re-verified on-chain, address shown
+invictae quote 200 usdc@arb TOSHI@base
+
+# Any ERC-20 by address, chains by id
+invictae quote 1000 usdt@1 0x912CE59144191C1204E64559FE8253a0e49E6548@42161
+
+# Inspect the exact transactions without signing anything
+invictae swap 100 usdc@base eth@arbitrum --dry-run --buyer 0xYou
+
+# Tighter slippage and a faster CCTP transfer
+invictae swap 2500 usdc@ethereum eth@base --slippage-bps 30 --min-finality 1000 --yes
+
+# Follow any in-flight swap to its on-chain outcome; one-shot status
+invictae watch --from base --tx 0xabc…
+invictae status --from base --tx 0xabc…
+
+# Complete a CCTP swap yourself (permissionless), requesting the order-capped fee
+invictae relay --from base --to arbitrum --tx 0xabc… --fee 0.5
+
+# What exists: chains, the rail between two of them, venues, known tickers
+invictae chains
+invictae routes --from base --to bnb
+invictae venues --chain bnb
+invictae tokens ethereum
+
+# Your money: balances, escrowed refunds (and claiming them), outcome history
+invictae balances --chain arbitrum
+invictae refunds --chain arbitrum --claim
+invictae history --chain arbitrum --blocks 50000
+
+# Verify every configured address against the live chains (CI-friendly exit code)
+invictae doctor --json
+```
+
+Agent-flavored (stdout is pure JSON/NDJSON; narration goes to stderr):
+
+```bash
+invictae quote 100 usdc@base eth@arbitrum --json | jq .expectedOut
+invictae swap 100 usdc@base eth@arbitrum --yes --json | while read -r e; do echo "$e" | jq -r .event; done
+invictae watch --from base --tx 0xabc… --json   # NDJSON step events, ends on final:true
+invictae schema                                  # the whole interface, as JSON
+```
+
 ## Commands
 
 | | |
