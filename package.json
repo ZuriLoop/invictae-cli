@@ -1,0 +1,40 @@
+{
+  "name": "invictae",
+  "version": "0.1.0",
+  "description": "Cross-chain swap CLI on LayerZero — stables, native coins, blue chips, and tokenized stocks across 12 chains",
+  "license": "MIT",
+  "author": "ZuriLoop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZuriLoop/invictae-cli.git"
+  },
+  "bin": {
+    "invictae": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "config",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "ts-node src/cli",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@layerzerolabs/lz-v2-utilities": "^3.0.86",
+    "commander": "^11.1.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "~18.18.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.4"
+  }
+}

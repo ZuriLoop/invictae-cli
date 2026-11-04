@@ -1,0 +1,550 @@
+{
+  "feeBps": 1,
+  "chains": [
+    {
+      "name": "ethereum",
+      "chainId": 1,
+      "lzEid": 30101,
+      "rpcEnv": "RPC_URL_ETH_MAINNET",
+      "publicRpc": "https://ethereum-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "stables": {
+        "usdt": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+      },
+      "bridges": {
+        "usdt0": {
+          "oApp": "0x6C96dE32CEa08842dcc4058c14d3aaAD7Fa41dee",
+          "stable": "usdt"
+        },
+        "stargateUsdt": {
+          "oApp": "0x933597a323Eb81cAe705C5bC29985172fd5A3973",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0xc026395860Db2d07ee33e05fE50ed7bD583189C7",
+          "stable": "usdc"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+          "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        }
+      },
+      "composer": null,
+      "zap": null,
+      "cctp": {
+        "domain": 0,
+        "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
+      },
+      "wrappedNative": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    },
+    {
+      "name": "bnb",
+      "chainId": 56,
+      "lzEid": 30102,
+      "rpcEnv": "RPC_URL_BNB_MAINNET",
+      "publicRpc": "https://bsc-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "stables": {
+        "usdt": "0x55d398326f99059fF775485246999027B3197955",
+        "usdc": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"
+      },
+      "bridges": {
+        "stargateUsdt": {
+          "oApp": "0x138EB30f73BC423c6455C53df6D89CB01d9eBc63",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0x962Bd449E630b0d928f308Ce63f1A21F02576057",
+          "stable": "usdc"
+        }
+      },
+      "venues": {
+        "pancake": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4",
+          "quoter": "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+          "tiers": [
+            100,
+            500,
+            2500,
+            10000
+          ]
+        },
+        "uniswap": {
+          "kind": "v3",
+          "router": "0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2",
+          "quoter": "0x78D78E420Da98ad378D7799bE8f4AF69033EB077",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        }
+      },
+      "composer": null,
+      "zap": null,
+      "wrappedNative": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+    },
+    {
+      "name": "base",
+      "chainId": 8453,
+      "lzEid": 30184,
+      "rpcEnv": "RPC_URL_BASE_MAINNET",
+      "publicRpc": "https://base-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "stables": {
+        "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      },
+      "bridges": {
+        "stargateUsdc": {
+          "oApp": "0x27a16dc786820B16E5c9028b75B99F6f604b5d26",
+          "stable": "usdc"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x2626664c2603336E57B271c5C0b26F421741e481",
+          "quoter": "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        },
+        "aerodrome": {
+          "kind": "v3-01",
+          "underlyingRouter": "0xBE6D8f0d05cC4be24d5167a3eF062215bE6D18a5",
+          "router": null,
+          "quoter": "0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0",
+          "tiers": [
+            1,
+            50,
+            100,
+            200,
+            2000
+          ],
+          "tierMeaning": "tickSpacing"
+        },
+        "aerodromeGaugesV3": {
+          "kind": "v3-01",
+          "underlyingRouter": "0x698Cb2b6dd822994581fEa6eA4Fc755d1363A92F",
+          "router": null,
+          "quoter": "0x514c8B5f54112481E28028F1166Bd78501089259",
+          "tiers": [
+            1,
+            50,
+            100,
+            200,
+            2000
+          ],
+          "tierMeaning": "tickSpacing"
+        }
+      },
+      "composer": null,
+      "zap": null,
+      "cctp": {
+        "domain": 6,
+        "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
+      },
+      "wrappedNative": "0x4200000000000000000000000000000000000006"
+    },
+    {
+      "name": "arbitrum",
+      "chainId": 42161,
+      "lzEid": 30110,
+      "rpcEnv": "RPC_URL_ARB_MAINNET",
+      "publicRpc": "https://arbitrum-one-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "stables": {
+        "usdt": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "usdc": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+      },
+      "bridges": {
+        "usdt0": {
+          "oApp": "0x14E4A1B13bf7F943c8ff7C51fb60FA964A298D92",
+          "stable": "usdt"
+        },
+        "stargateUsdt": {
+          "oApp": "0xcE8CcA271Ebc0533920C83d39F417ED6A0abB7D0",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0xe8CDF27AcD73a434D661C84887215F7598e7d0d3",
+          "stable": "usdc"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+          "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        }
+      },
+      "composer": null,
+      "zap": null,
+      "cctp": {
+        "domain": 3,
+        "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
+      },
+      "wrappedNative": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+    },
+    {
+      "name": "hyperevm",
+      "chainId": 999,
+      "lzEid": 30367,
+      "rpcEnv": "RPC_URL_HYPEREVM_MAINNET",
+      "publicRpc": "https://rpc.hyperliquid.xyz/evm",
+      "lzEndpoint": "0x3A73033C0b1407574C76BdBAc67f126f6b4a9AA9",
+      "stables": {
+        "usdt": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"
+      },
+      "bridges": {
+        "usdt0": {
+          "oApp": "0x904861a24F30EC96ea7CFC3bE9EA4B476d237e98",
+          "stable": "usdt"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x7AdF4701AbCDBc5Dcf5Cb58B526f897e048F0D11",
+          "quoter": "0x7DfD4F31be6814D2906BDE155c3e1B146EAc1468",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        },
+        "hyperswap": {
+          "kind": "v3-01",
+          "underlyingRouter": "0x4E2960a8cd19B467b82d26D83fAcb0fAE26b094D",
+          "router": null,
+          "quoter": null,
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ],
+          "notes": "The deep venue on HyperEVM (USDT0/WHYPE ~$290k in the 0.05% pool). Quoter is nonstandard \u2014 wire it before routing here."
+        }
+      },
+      "notes": "USDT lane only (no Stargate). Own LayerZero endpoint address.",
+      "composer": null,
+      "zap": null,
+      "wrappedNative": "0x5555555555555555555555555555555555555555"
+    },
+    {
+      "name": "optimism",
+      "chainId": 10,
+      "lzEid": 30111,
+      "rpcEnv": "RPC_URL_OP_MAINNET",
+      "publicRpc": "https://optimism-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "stables": {
+        "usdt": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+        "usdc": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"
+      },
+      "bridges": {
+        "stargateUsdt": {
+          "oApp": "0x19cFCE47eD54a88614648DC3f19A5980097007dD",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0xcE8CcA271Ebc0533920C83d39F417ED6A0abB7D0",
+          "stable": "usdc"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+          "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        },
+        "velodrome": {
+          "kind": "v3-01",
+          "underlyingRouter": "0x0792a633F0c19c351081CF4B211F68F79bCc9676",
+          "router": null,
+          "quoter": "0x89D8218ed5fF1e46d8dcd33fb0bbeE3be1621466",
+          "tiers": [
+            1,
+            50,
+            100,
+            200,
+            2000
+          ],
+          "tierMeaning": "tickSpacing"
+        },
+        "velodromeGaugesV2": {
+          "kind": "v3-01",
+          "underlyingRouter": "0xbA3aEe516399388C779463183d00bB579f5041Ca",
+          "router": null,
+          "quoter": "0xAd432b2ca49965266133F2bd4c17dc1Ec12f5DEB",
+          "tiers": [
+            1,
+            50,
+            100,
+            200,
+            2000
+          ],
+          "tierMeaning": "tickSpacing"
+        }
+      },
+      "composer": null,
+      "zap": null,
+      "cctp": {
+        "domain": 2,
+        "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
+      },
+      "wrappedNative": "0x4200000000000000000000000000000000000006"
+    },
+    {
+      "name": "polygon",
+      "chainId": 137,
+      "lzEid": 30109,
+      "rpcEnv": "RPC_URL_POL_MAINNET",
+      "publicRpc": "https://polygon-bor-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "wrappedNative": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+      "stables": {
+        "usdt": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+        "usdc": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+      },
+      "bridges": {
+        "usdt0": {
+          "oApp": "0x6BA10300f0DC58B7a1e4c0e41f5daBb7D7829e13",
+          "stable": "usdt"
+        },
+        "stargateUsdt": {
+          "oApp": "0xd47b03ee6d86Cf251ee7860FB2ACf9f91B9fD4d7",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0x9Aa02D4Fae7F58b8E8f34c66E756cC734DAc7fe4",
+          "stable": "usdc"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+          "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        }
+      },
+      "cctp": {
+        "domain": 7,
+        "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
+      },
+      "composer": null,
+      "zap": null
+    },
+    {
+      "name": "avalanche",
+      "chainId": 43114,
+      "lzEid": 30106,
+      "rpcEnv": "RPC_URL_AVAX_MAINNET",
+      "publicRpc": "https://avalanche-c-chain-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "wrappedNative": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+      "stables": {
+        "usdt": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
+        "usdc": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
+      },
+      "bridges": {
+        "stargateUsdt": {
+          "oApp": "0x12dC9256Acc9895B076f6638D628382881e62CeE",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0x5634c4a5FEd09819E3c46D86A965Dd9447d86e47",
+          "stable": "usdc"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0xbb00FF08d01D300023C629E8fFfFcb65A5a578cE",
+          "quoter": "0xbe0F5544EC67e9B3b2D979aaA43f18Fd87E6257F",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        }
+      },
+      "cctp": {
+        "domain": 1,
+        "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
+      },
+      "composer": null,
+      "zap": null
+    },
+    {
+      "name": "unichain",
+      "chainId": 130,
+      "lzEid": 30320,
+      "rpcEnv": "RPC_URL_UNICHAIN_MAINNET",
+      "publicRpc": "https://unichain-rpc.publicnode.com",
+      "lzEndpoint": "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B",
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "stables": {
+        "usdt": "0x9151434b16b9763660705744891fA906F660EcC5",
+        "usdc": "0x078D782b760474a361dDA0AF3839290b0EF57AD6"
+      },
+      "bridges": {
+        "usdt0": {
+          "oApp": "0xc07bE8994D035631c36fb4a89C918CeFB2f03EC3",
+          "stable": "usdt"
+        }
+      },
+      "venues": {
+        "uniswap": {
+          "kind": "v3",
+          "default": true,
+          "router": "0x73855d06DE49d0fe4A9c42636Ba96c62da12FF9C",
+          "quoter": "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658",
+          "tiers": [
+            100,
+            500,
+            3000,
+            10000
+          ]
+        }
+      },
+      "cctp": {
+        "domain": 10,
+        "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
+      },
+      "notes": "No Stargate pools: USDT lane rides USDT0, USDC lane rides CCTP only. Own LayerZero endpoint address (not the canonical 0x1a44).",
+      "composer": null,
+      "zap": null
+    },
+    {
+      "name": "sei",
+      "chainId": 1329,
+      "lzEid": 30280,
+      "rpcEnv": "RPC_URL_SEI_MAINNET",
+      "publicRpc": "https://sei-evm-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "wrappedNative": "0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7",
+      "stables": {
+        "usdt": "0xB75D0B03c06A926e488e2659DF1A861F860bD3d1",
+        "usdc": "0x3894085Ef7Ff0f0aeDf52E2A2704928d1Ec074F1"
+      },
+      "bridges": {
+        "stargateUsdt": {
+          "oApp": "0x0dB9afb4C33be43a0a0e396Fd1383B4ea97aB10a",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0x45d417612e177672958dC0537C45a8f8d754Ac2E",
+          "stable": "usdc"
+        }
+      },
+      "venues": {},
+      "notes": "Bridge-only until a venue is verified (DragonSwap is the local DEX). USDT0's Sei OFT wraps a different token than Stargate's USDT, so the USDT lane rides Stargate.",
+      "composer": null,
+      "zap": null
+    },
+    {
+      "name": "mantle",
+      "chainId": 5000,
+      "lzEid": 30181,
+      "rpcEnv": "RPC_URL_MANTLE_MAINNET",
+      "publicRpc": "https://mantle-rpc.publicnode.com",
+      "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c",
+      "wrappedNative": "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8",
+      "stables": {
+        "usdt": "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE",
+        "usdc": "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9"
+      },
+      "bridges": {
+        "stargateUsdt": {
+          "oApp": "0xB715B85682B731dB9D5063187C450095c91C57FC",
+          "stable": "usdt"
+        },
+        "stargateUsdc": {
+          "oApp": "0xAc290Ad4e0c891FDc295ca4F0a6214cf6dC6acDC",
+          "stable": "usdc"
+        }
+      },
+      "venues": {},
+      "notes": "Bridge-only until a venue is verified (Agni/FusionX are V3 forks to vet). USDT0's Mantle OFT wraps a different token than Stargate's USDT, so the USDT lane rides Stargate. No CCTP.",
+      "composer": null,
+      "zap": null
+    },
+    {
+      "name": "plasma",
+      "chainId": 9745,
+      "lzEid": 30383,
+      "rpcEnv": "RPC_URL_PLASMA_MAINNET",
+      "publicRpc": "https://rpc.plasma.to",
+      "lzEndpoint": "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B",
+      "wrappedNative": null,
+      "stables": {
+        "usdt": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"
+      },
+      "bridges": {
+        "usdt0": {
+          "oApp": "0x02ca37966753bDdDf11216B73B16C1dE756A7CF9",
+          "stable": "usdt"
+        }
+      },
+      "venues": {},
+      "notes": "USDT0-only, bridge-only, own LayerZero endpoint address. Native USDC/CCTP not configured (no verified native USDC).",
+      "composer": null,
+      "zap": null
+    }
+  ],
+  "cctp": {
+    "irisApi": "https://iris-api.circle.com"
+  }
+}
