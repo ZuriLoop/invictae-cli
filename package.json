@@ -29,9 +29,9 @@
     "node": ">=20"
   },
   "dependencies": {
-    "commander": "^11.1.0",
-    "dotenv": "^16.4.5",
-    "ethers": "^5.7.2"
+    "commander": "11.1.0",
+    "dotenv": "16.6.1",
+    "ethers": "5.8.0"
   },
   "devDependencies": {
     "@types/node": "~18.18.14",

@@ -168,6 +168,7 @@ export function registerTrade(program: Command): void {
         .option('--max-fee <n>', 'CCTP fast-transfer fee budget in USDC units (cctp rail)', '0')
         .option('--min-finality <n>', 'CCTP finality: 2000 standard, 1000 fast (cctp rail)', '2000')
         .option('--yes', 'skip the confirmation prompt (required in non-interactive sessions)', false)
+        .option('--allow-unverified', 'permit swapping tokens resolved via CoinGecko instead of the curated registry or an explicit address', false)
         .option('--no-follow', 'do not stream the swap steps after broadcasting')
         .option('--json', 'emit NDJSON events on stdout: plan, tx, step, done', false)
         .option('--dry-run', 'print the wallet payloads instead of broadcasting', false)
@@ -191,6 +192,12 @@ export function registerTrade(program: Command): void {
                 prep = await prepare({ ...parsed, buyer })
             } finally {
                 spin.stop()
+            }
+            if ((prep.payVia === 'coingecko' || prep.outVia === 'coingecko') && !opts.allowUnverified && !opts.dryRun) {
+                const which = prep.payVia === 'coingecko' ? prep.payToken : prep.tokenOutResolved
+                throw new Error(
+                    `refusing to swap a token resolved via CoinGecko (${which}) — verify the address and pass it explicitly, or add --allow-unverified`
+                )
             }
             const txs = buildSwapTxs(prep, { maxFee: opts.maxFee, minFinality: parseInt(opts.minFinality ?? '2000') })
 

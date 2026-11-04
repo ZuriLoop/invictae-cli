@@ -11,7 +11,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci || npm install
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=critical
       - run: npm run typecheck
       - run: npm test
       - run: node dist/cli/index.js chains

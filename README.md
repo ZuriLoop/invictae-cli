@@ -129,6 +129,18 @@ Chain inputs (`--from`, `--to`, `--chain`) accept names (`base`), aliases (`eth`
 
 Ethereum, BNB Chain, Base, Arbitrum, Optimism, HyperEVM, Polygon, Avalanche, Unichain, Sei, Mantle, Plasma. Rails and venues per chain live in `config/chains.json`; every address in it is verifiable with `invictae doctor`, which checks the live chain, not this repo's claims.
 
+## Why trust this, in a year of hacks
+
+2026's losses concentrate in two places: **compromised keys/infrastructure** (~three quarters of stolen value) and **bridges with trusted verifiers**. This design removes both categories rather than defending them:
+
+- **No verifier set to compromise.** Value moves on the issuers' own burn/mint systems (Circle, Tether) or audited public pools — there is no multisig of validators, no single sequencer, no solver whose key unlocks user funds.
+- **Nothing to drain between transactions.** The source contract holds no funds at rest; the destination contract holds only in-flight amounts, with user escrow explicitly firewalled from every admin function.
+- **Approvals are surgical.** Each swap approves exactly one order's amount to one allowlisted venue and clears it afterward — delisting a venue actually ends its power.
+- **Refunds are code, not support tickets.** Every failure path terminates in an on-chain refund or claimable escrow; the exploit-regression suite proves each one.
+- **You can verify instead of believing.** `invictae doctor` re-checks every address in this repo against the live chains — RPC identity, endpoints, each bridge's wrapped token, venue pairings — and exits non-zero on any mismatch. Run it yourself.
+- **The supply chain is small and pinned.** Three runtime dependencies, exact versions, committed lockfile, no postinstall scripts, offline tests. See [SECURITY.md](SECURITY.md) for the one inherited advisory we disclose and the plan for it.
+- **Unverified tokens can't be swapped by accident.** Anything resolved outside the curated registry requires `--allow-unverified` after showing you the exact address.
+
 ## Trust model
 
 - No solvers, no private orderflow: bridging is Circle/Tether/Stargate's own systems; swaps are public AMMs.
