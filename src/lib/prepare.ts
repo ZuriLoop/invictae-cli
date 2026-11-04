@@ -67,6 +67,8 @@ export async function prepare(opts: {
     exactOut?: boolean
     slippageBps: number
     composeGas: number
+    /** native value (wei, destination chain) delivered with the compose message ('0' = none) */
+    composeValue?: string
     relayFeeCap: string
     buyer: string
     deadlineSeconds: number
@@ -159,7 +161,7 @@ export async function prepare(opts: {
 
     // Bridge leg. OFT: quoteOFT for the delivered amount (pool fees out) and
     // quoteSend for the LZ fee. CCTP: burn == mint at standard finality.
-    const extraOptions = composeOptions(opts.composeGas)
+    const extraOptions = composeOptions(opts.composeGas, opts.composeValue ?? 0)
     const composerB32 = ethers.zeroPadValue(dstChain.composer ?? ethers.ZeroAddress, 32)
     let bridgeReceived: bigint
     let oft: ethers.Contract | null = null
