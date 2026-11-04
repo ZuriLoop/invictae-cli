@@ -1,0 +1,14 @@
+# invictae
+
+> Agentic cross-chain swap CLI — stables, native coins, and tokenized stocks across 12 chains, in one command. Dependency-light, JSON-first, with on-chain refund guarantees and local policy guardrails.
+
+## For agents
+- [SKILL.md](SKILL.md): how to drive the CLI, with safety rules
+- [AGENTS.md](AGENTS.md): the stdout/stderr contract, JSON shapes, recipes
+- `invictae schema`: the full interface as JSON
+- `invictae-mcp`: Model Context Protocol server (stdio) in the same package
+
+## Docs
+- [README.md](README.md): install, examples, commands, trust model
+- [SECURITY.md](SECURITY.md): reporting, supply-chain posture
+- [CONTRIBUTING.md](CONTRIBUTING.md)
