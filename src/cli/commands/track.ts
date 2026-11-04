@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 
 import { getChain, loadConfig, provider, COMPOSER_ABI, ERC20_ABI } from '../../lib/common'
 import { trackSwap, type StepEvent } from '../../lib/tracker'
-import { c, note, spinner } from '../ui'
+import { c, emitJson, note, spinner } from '../ui'
 
 const STEP_LABELS: Record<string, string> = {
     source_confirmed: 'source confirmed',
@@ -43,6 +43,7 @@ export function registerTrack(program: Command): void {
         .description("One-shot answer to where's my money (LayerZero Scan + Circle Iris)")
         .requiredOption('--from <chain>', 'source chain of the transaction')
         .requiredOption('--tx <hash>', 'source-chain transaction hash')
+        .option('--json', 'print the status as one JSON object', false)
         .action(async (opts) => {
             const config = loadConfig()
             const srcChain = getChain(config, opts.from)
@@ -51,10 +52,16 @@ export function registerTrack(program: Command): void {
                 const res = await fetch(`https://scan.layerzero-api.com/v1/messages/tx/${opts.tx}`)
                 if (res.ok) {
                     const body = (await res.json()) as { data?: { status?: { name?: string }; pathway?: { dstEid?: number } }[] }
-                    for (const m of body.data ?? []) {
-                        console.log(`LayerZero: ${c.bold(m.status?.name ?? 'unknown')} dstEid=${m.pathway?.dstEid ?? '?'}  ${c.dim(`https://layerzeroscan.com/tx/${opts.tx}`)}`)
+                    if ((body.data ?? []).length > 0) {
+                        if (opts.json) {
+                            emitJson({ rail: 'oft', messages: body.data!.map((m) => ({ status: m.status?.name ?? 'unknown', dstEid: m.pathway?.dstEid ?? null })) })
+                            return
+                        }
+                        for (const m of body.data!) {
+                            console.log(`LayerZero: ${c.bold(m.status?.name ?? 'unknown')} dstEid=${m.pathway?.dstEid ?? '?'}  ${c.dim(`https://layerzeroscan.com/tx/${opts.tx}`)}`)
+                        }
+                        return
                     }
-                    if ((body.data ?? []).length > 0) return
                 }
             } catch {
                 // fall through to CCTP
@@ -65,6 +72,10 @@ export function registerTrack(program: Command): void {
                 if (res.ok) {
                     const body = (await res.json()) as { messages?: { status: string }[] }
                     if ((body.messages ?? []).length > 0) {
+                        if (opts.json) {
+                            emitJson({ rail: 'cctp', messages: body.messages!.map((m) => ({ status: m.status })) })
+                            return
+                        }
                         for (const m of body.messages!) {
                             console.log(
                                 `CCTP: attestation ${c.bold(m.status)}${m.status === 'complete' ? ' — run invictae relay to finish' : ' (waiting on Circle)'}`
@@ -74,7 +85,8 @@ export function registerTrack(program: Command): void {
                     }
                 }
             }
-            note('No LayerZero message or CCTP burn found for that tx (yet) — wrong chain, or still indexing.')
+            if (opts.json) emitJson({ rail: null, messages: [] })
+            else note('No LayerZero message or CCTP burn found for that tx (yet) — wrong chain, or still indexing.')
         })
 
     program

@@ -47,6 +47,10 @@ Configuration: copy `.env.example` to `.env` — public RPC fallbacks work out o
 | `balances` / `refunds` / `history` | Account views; `refunds --claim` pays out escrowed refunds. |
 | `doctor` | Live verification of every configured chain: RPC identity, LayerZero endpoints, each bridge's wrapped token, venue router/quoter pairing, and deployed-contract wiring. Non-zero exit for CI. |
 
+## For agents
+
+The CLI is built to be driven by software: `--json` on every command (one object for reads, NDJSON for streams), data on stdout and narration on stderr, documented exit codes, a `schema` command that returns the full interface as JSON, and compact positional syntax — `invictae quote 100 usdc@base eth@arbitrum`. `swap` refuses to broadcast non-interactively without `--yes`, and `--dry-run` returns raw signable payloads without touching a key. See [AGENTS.md](AGENTS.md).
+
 ## Tickers, addresses, chains
 
 Token inputs (`--pay`, `--token-out`) accept, in order of trust:
@@ -69,4 +73,4 @@ Ethereum, BNB Chain, Base, Arbitrum, Optimism, HyperEVM, Polygon, Avalanche, Uni
 - Any failure after funds land refunds the stablecoin to the buyer on the destination chain, escrowed claimably (`invictae refunds --claim`) if the token rejects the transfer.
 - Quotes scan every venue × fee tier (including two-hop routes through the wrapped native) and route to the best fill; the chosen venue is pinned in the signed order.
 
-The protocol contracts live in the [Invictae](https://github.com/ZuriLoop/invictae-xyz) repository. This CLI is MIT-licensed; use it, fork it, or wire its `lib/` (quote preparation, transaction building, lifecycle tracker) into your own tooling.
+This CLI is MIT-licensed; use it, fork it, or wire its `lib/` (quote preparation, transaction building, lifecycle tracker) into your own tooling.

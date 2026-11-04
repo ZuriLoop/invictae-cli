@@ -3,7 +3,7 @@ import { Command } from 'commander'
 import { ethers } from 'ethers'
 
 import { getChain, loadConfig, loadTokens, provider, resolveToken, ERC20_ABI } from '../../lib/common'
-import { c, kv, note, ok, table } from '../ui'
+import { c, emitJson, note, ok, table } from '../ui'
 
 const COMPOSER_READ_ABI = [
     'function refundsOwed(address token, address account) view returns (uint256)',
@@ -27,14 +27,17 @@ export function registerAccount(program: Command): void {
         .description('Native, stable, and registry-token balances on a chain')
         .requiredOption('--chain <name>', 'chain to inspect')
         .option('--address <address>', 'account (default: your signer)')
+        .option('--json', 'print balances as JSON', false)
         .action(async (opts) => {
             const chain = getChain(loadConfig(), opts.chain)
             const who = resolveAddress(opts.address)
             const p = provider(chain)
-            console.log(`${c.bold(chain.name)}  ${c.dim(who)}`)
+            if (!opts.json) console.log(`${c.bold(chain.name)}  ${c.dim(who)}`)
 
+            const json: Record<string, { amount: string; address?: string; decimals?: number }> = {}
             const rows: string[][] = []
             const native = await p.getBalance(who)
+            json.native = { amount: native.toString(), decimals: 18 }
             rows.push(['native', ethers.utils.formatEther(native), ''])
 
             const entries: [string, string][] = [
@@ -46,10 +49,15 @@ export function registerAccount(program: Command): void {
                     const t = new ethers.Contract(addr, ERC20_ABI, p)
                     const [bal, dec] = await Promise.all([t.balanceOf(who), t.decimals()])
                     if (bal.isZero()) continue
+                    json[sym] = { amount: bal.toString(), address: addr, decimals: dec }
                     rows.push([sym, ethers.utils.formatUnits(bal, dec), c.dim(addr)])
                 } catch {
                     // unreadable token — skip
                 }
+            }
+            if (opts.json) {
+                emitJson({ chain: chain.name, address: who, balances: json })
+                return
             }
             table(['asset', 'balance', 'address'], rows)
             if (rows.length === 1) note('(zero balances in the registry are hidden)')
@@ -61,6 +69,7 @@ export function registerAccount(program: Command): void {
         .requiredOption('--chain <name>', 'chain of the composer')
         .option('--address <address>', 'account (default: your signer)')
         .option('--claim', 'claim everything found (needs PRIVATE_KEY for gas; payout goes to the account)', false)
+        .option('--json', 'print owed refunds (and claim tx hashes) as JSON', false)
         .action(async (opts) => {
             const chain = getChain(loadConfig(), opts.chain)
             if (!chain.composer) throw new Error(`SwapComposer is not deployed on ${chain.name}`)
@@ -80,10 +89,15 @@ export function registerAccount(program: Command): void {
                 owed.push({ sym, addr, amount, dec })
             }
             if (owed.length === 0) {
-                ok(`no escrowed refunds for ${who} on ${chain.name}`)
+                if (opts.json) emitJson({ chain: chain.name, address: who, owed: [] })
+                else ok(`no escrowed refunds for ${who} on ${chain.name}`)
                 return
             }
-            table(['token', 'owed'], owed.map((o) => [o.sym, ethers.utils.formatUnits(o.amount, o.dec)]))
+            if (opts.json && !opts.claim) {
+                emitJson({ chain: chain.name, address: who, owed: owed.map((o) => ({ token: o.addr, symbol: o.sym, amount: o.amount.toString(), decimals: o.dec })) })
+                return
+            }
+            if (!opts.json) table(['token', 'owed'], owed.map((o) => [o.sym, ethers.utils.formatUnits(o.amount, o.dec)]))
             if (!opts.claim) {
                 note(`claim with: invictae refunds --chain ${chain.name} --address ${who} --claim`)
                 return
@@ -91,11 +105,14 @@ export function registerAccount(program: Command): void {
             const key = process.env.PRIVATE_KEY
             if (!key) throw new Error('PRIVATE_KEY missing (claiming is permissionless but someone must pay gas)')
             const signer = new ethers.Wallet(key, p)
+            const claims: { token: string; amount: string; txHash: string }[] = []
             for (const o of owed) {
                 const tx = await composer.connect(signer).claimRefund(o.addr, who)
                 const rc = await tx.wait()
+                claims.push({ token: o.addr, amount: o.amount.toString(), txHash: rc.transactionHash })
                 ok(`claimed ${ethers.utils.formatUnits(o.amount, o.dec)} ${o.sym} → ${who}  ${c.dim(rc.transactionHash)}`)
             }
+            if (opts.json) emitJson({ chain: chain.name, address: who, claimed: claims })
         })
 
     program
@@ -104,6 +121,7 @@ export function registerAccount(program: Command): void {
         .requiredOption('--chain <name>', 'chain of the composer')
         .option('--address <address>', 'account (default: your signer)')
         .option('--blocks <n>', 'how far back to scan', '9000')
+        .option('--json', 'print outcomes as JSON', false)
         .action(async (opts) => {
             const chain = getChain(loadConfig(), opts.chain)
             if (!chain.composer) throw new Error(`SwapComposer is not deployed on ${chain.name}`)
@@ -114,15 +132,29 @@ export function registerAccount(program: Command): void {
             const from = Math.max(0, latest - parseInt(opts.blocks))
 
             const rows: [number, string[]][] = []
+            const jsonRows: { block: number; outcome: string; txHash: string; args: Record<string, string> }[] = []
             const push = async (eventName: string, label: string, fmt: (a: ethers.utils.Result) => string) => {
                 const events = await composer.queryFilter(composer.filters[eventName](who), from, latest)
-                for (const e of events) rows.push([e.blockNumber, [String(e.blockNumber), label, fmt(e.args!), c.dim(e.transactionHash)]])
+                for (const e of events) {
+                    rows.push([e.blockNumber, [String(e.blockNumber), label, fmt(e.args!), c.dim(e.transactionHash)]])
+                    jsonRows.push({
+                        block: e.blockNumber,
+                        outcome: eventName,
+                        txHash: e.transactionHash,
+                        args: Object.fromEntries(Object.entries(e.args!).filter(([k]) => isNaN(Number(k))).map(([k, v]) => [k, String(v)])),
+                    })
+                }
             }
             await push('SwapExecuted', c.green('executed'), (a) => `${a.amountOut.toString()} of ${a.tokenOut}`)
             await push('SwapRefunded', c.yellow('refunded'), (a) => `${a.amountIn.toString()} of ${a.tokenIn}`)
             await push('RefundEscrowed', c.yellow('escrowed'), (a) => `${a.amountIn.toString()} of ${a.tokenIn}`)
             await push('RefundClaimed', c.green('claimed'), (a) => `${a.amount.toString()} of ${a.tokenIn}`)
 
+            if (opts.json) {
+                jsonRows.sort((a, b) => a.block - b.block)
+                emitJson({ chain: chain.name, address: who, fromBlock: from, toBlock: latest, outcomes: jsonRows })
+                return
+            }
             if (rows.length === 0) {
                 note(`no outcomes for ${who} on ${chain.name} in the last ${opts.blocks} blocks`)
                 return

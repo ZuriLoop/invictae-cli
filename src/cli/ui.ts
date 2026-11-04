@@ -2,6 +2,10 @@
 import readline from 'readline'
 
 const tty = process.stdout.isTTY && !process.env.NO_COLOR
+const err = (s: string) => process.stderr.write(s + '\n')
+
+/** Machine output: one JSON value per line on stdout, nothing else mixed in. */
+export const emitJson = (value: unknown) => process.stdout.write(JSON.stringify(value) + '\n')
 
 const wrap = (code: number) => (s: string) => (tty ? `\x1b[${code}m${s}\x1b[0m` : s)
 export const c = {
@@ -14,10 +18,11 @@ export const c = {
     magenta: wrap(35),
 }
 
-export const ok = (s: string) => console.log(`${c.green('✓')} ${s}`)
-export const fail = (s: string) => console.log(`${c.red('✗')} ${s}`)
-export const warn = (s: string) => console.log(`${c.yellow('!')} ${s}`)
-export const note = (s: string) => console.log(c.dim(s))
+// Status/decoration goes to stderr so stdout stays parseable for agents.
+export const ok = (s: string) => err(`${c.green('✓')} ${s}`)
+export const fail = (s: string) => err(`${c.red('✗')} ${s}`)
+export const warn = (s: string) => err(`${c.yellow('!')} ${s}`)
+export const note = (s: string) => err(c.dim(s))
 
 /** Aligned two-column key/value block. */
 export function kv(rows: [string, string][]): void {
@@ -49,15 +54,15 @@ export function confirm(question: string): Promise<boolean> {
 
 /** Minimal line spinner; inert when not a TTY. */
 export function spinner(label: string): { update: (s: string) => void; stop: (finalLine?: string) => void } {
-    if (!tty) {
-        console.log(label)
-        return { update: (s) => console.log(s), stop: (f) => f && console.log(f) }
+    if (!process.stderr.isTTY) {
+        err(label)
+        return { update: (s) => err(s), stop: (f) => f && err(f) }
     }
     const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
     let i = 0
     let text = label
     const timer = setInterval(() => {
-        process.stdout.write(`\r${c.cyan(frames[(i = (i + 1) % frames.length)])} ${text}\x1b[K`)
+        process.stderr.write(`\r${c.cyan(frames[(i = (i + 1) % frames.length)])} ${text}\x1b[K`)
     }, 80)
     return {
         update: (s: string) => {
@@ -65,8 +70,8 @@ export function spinner(label: string): { update: (s: string) => void; stop: (fi
         },
         stop: (finalLine?: string) => {
             clearInterval(timer)
-            process.stdout.write('\r\x1b[K')
-            if (finalLine) console.log(finalLine)
+            process.stderr.write('\r\x1b[K')
+            if (finalLine) err(finalLine)
         },
     }
 }

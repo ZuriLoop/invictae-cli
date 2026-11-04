@@ -43,6 +43,42 @@ Examples:
 Environment: .env with RPC_URL_* (public fallbacks exist) and PRIVATE_KEY for signing.`
     )
 
+program
+    .command('schema')
+    .description('Machine-readable description of every command, input, and output shape (for agents)')
+    .action(() => {
+        const schema = {
+            name: 'invictae',
+            version: pkg.version,
+            conventions: {
+                stdout: 'data only when --json is passed (one JSON object, or NDJSON for streams); human tables otherwise',
+                stderr: 'progress, spinners, and warnings — never parse it',
+                exitCodes: { '0': 'success', '1': 'error or failed checks' },
+                tokens: "tickers (registry first, CoinGecko fallback re-verified on-chain), 'eth'/'native', wrapped symbols, or ERC-20 addresses",
+                chains: 'names, aliases (eth,bsc,arb,op,matic,avax,hype,uni), chain ids, or LayerZero EIDs',
+                positional: 'quote/swap accept: AMOUNT TOKEN@CHAIN TOKEN@CHAIN',
+                nonInteractive: 'swap requires --yes when stdin is not a TTY or --json is passed; --dry-run never signs',
+            },
+            commands: {
+                quote: { args: '[amount] [pay@chain] [receive@chain]', flags: ['--from', '--to', '--pay', '--amount', '--token-out', '--stable', '--exact-out', '--slippage-bps', '--relay-fee-cap', '--buyer', '--json'], json: 'object: rail, amountIn, arrives, expectedOut, minOut, venues, fees, deadline' },
+                swap: { args: 'same as quote', flags: ['all quote flags', '--yes', '--max-fee', '--min-finality', '--no-follow', '--dry-run', '--json'], json: "NDJSON events: {event:'plan'|'tx'|'step'|'done'|'error', ...}", requires: 'PRIVATE_KEY (unless --dry-run)' },
+                watch: { flags: ['--from', '--tx', '--json'], json: "NDJSON StepEvents: {step, state, rail, detail, txHash?, at, final?}" },
+                status: { flags: ['--from', '--tx', '--json'], json: 'object: {rail, messages[]}' },
+                relay: { flags: ['--from', '--to', '--tx', '--fee'], requires: 'PRIVATE_KEY' },
+                chains: { flags: ['--json'], json: 'array of chain configs' },
+                routes: { flags: ['--from', '--to', '--json'], json: 'object: {from, to, lanes:{usdc,usdt}, destinationVenues[]}' },
+                venues: { flags: ['--chain', '--json'], json: 'object keyed by venue name' },
+                tokens: { args: '[chain]', flags: ['--json'], json: 'registry object keyed by chain then symbol' },
+                balances: { flags: ['--chain', '--address', '--json'], json: 'object: {chain, address, balances:{sym:{amount,decimals,address?}}}' },
+                refunds: { flags: ['--chain', '--address', '--claim', '--json'], json: 'object: {chain, address, owed[]} or {claimed[]}', requires: 'PRIVATE_KEY only with --claim' },
+                history: { flags: ['--chain', '--address', '--blocks', '--json'], json: 'object: {chain, address, outcomes[]}' },
+                doctor: { flags: ['--chain', '--json'], json: 'object: {signer, ok, chains:{name:[{level,detail}]}}', exit: 'non-zero when any check fails' },
+                schema: { json: 'this document' },
+            },
+        }
+        console.log(JSON.stringify(schema, null, 2))
+    })
+
 registerTrade(program)
 registerTrack(program)
 registerInfo(program)

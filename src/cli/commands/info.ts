@@ -2,7 +2,7 @@
 import { Command } from 'commander'
 
 import { getChain, loadConfig, loadTokens, pickBridge } from '../../lib/common'
-import { c, note, table } from '../ui'
+import { c, emitJson, note, table } from '../ui'
 
 export function registerInfo(program: Command): void {
     program
@@ -29,8 +29,13 @@ export function registerInfo(program: Command): void {
     program
         .command('tokens [chain]')
         .description('Curated token registry (xStocks, Ondo, …) usable as --pay / --token-out symbols')
-        .action((chain?: string) => {
+        .option('--json', 'print the registry as JSON', false)
+        .action((chain: string | undefined, opts: { json: boolean }) => {
             const registry = loadTokens()
+            if (opts.json) {
+                emitJson(chain ? { [chain.toLowerCase()]: registry[chain.toLowerCase()] ?? {} } : registry)
+                return
+            }
             const names = chain ? [chain.toLowerCase()] : Object.keys(registry)
             for (const name of names) {
                 const tokens = registry[name]
@@ -48,8 +53,20 @@ export function registerInfo(program: Command): void {
         .command('venues')
         .description('Swap venues per chain and whether orders can route to them')
         .requiredOption('--chain <name>', 'chain to inspect')
+        .option('--json', 'print venues as JSON', false)
         .action((opts) => {
             const chain = getChain(loadConfig(), opts.chain)
+            if (opts.json) {
+                emitJson(
+                    Object.fromEntries(
+                        Object.entries(chain.venues).map(([name, v]) => [
+                            name,
+                            { kind: v.kind, default: Boolean(v.default), routable: Boolean(v.router && v.quoter), router: v.router, quoter: v.quoter, tiers: v.tiers },
+                        ])
+                    )
+                )
+                return
+            }
             table(
                 ['venue', 'kind', 'routable', 'default', 'tiers', 'router'],
                 Object.entries(chain.venues).map(([name, v]) => [
@@ -69,10 +86,28 @@ export function registerInfo(program: Command): void {
         .description('Which rails connect two chains, per stable')
         .requiredOption('--from <chain>', 'source chain')
         .requiredOption('--to <chain>', 'destination chain')
+        .option('--json', 'print routes as JSON', false)
         .action((opts) => {
             const config = loadConfig()
             const src = getChain(config, opts.from)
             const dst = getChain(config, opts.to)
+            if (opts.json) {
+                const lanes: Record<string, { rail: string | null; kind: string | null }> = {}
+                for (const stable of ['usdc', 'usdt'] as const) {
+                    if (!src.stables[stable] || !dst.stables[stable]) lanes[stable] = { rail: null, kind: null }
+                    else if (stable === 'usdc' && src.cctp && dst.cctp) lanes[stable] = { rail: 'cctp', kind: 'burn-mint' }
+                    else {
+                        try {
+                            lanes[stable] = { rail: pickBridge(src, dst, stable).key, kind: 'oft-compose' }
+                        } catch {
+                            lanes[stable] = { rail: null, kind: null }
+                        }
+                    }
+                }
+                const venues = Object.entries(dst.venues).filter(([, v]) => v.router && v.quoter).map(([k]) => k)
+                emitJson({ from: src.name, to: dst.name, lanes, destinationVenues: venues })
+                return
+            }
             const rows: string[][] = []
             for (const stable of ['usdc', 'usdt'] as const) {
                 if (!src.stables[stable] || !dst.stables[stable]) {
