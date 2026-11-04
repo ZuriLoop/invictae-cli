@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="14">
+  <style>
+    .l { opacity: 0; animation: a .3s ease-out forwards; }
+    @keyframes a { to { opacity: 1 } }
+    .cmd { fill: #e8eeec } .dim { fill: #7d8f8a } .grn { fill: #4cc2b4 } .acc { fill: #e3b341 } .p { fill: #4cc2b4 }
+  </style>
+  <rect width="720" height="340" rx="10" fill="#101715"/>
+  <circle cx="22" cy="20" r="5.5" fill="#ff5f57"/><circle cx="40" cy="20" r="5.5" fill="#febc2e"/><circle cx="58" cy="20" r="5.5" fill="#28c840"/>
+  <text x="360" y="25" text-anchor="middle" class="dim" font-size="12">invictae</text>
+
+  <text x="24" y="58" class="l" style="animation-delay:.2s"><tspan class="p">$</tspan> <tspan class="cmd">npx invictae quote 100 usdc@base eth@arbitrum</tspan></text>
+  <text x="24" y="84" class="l dim" style="animation-delay:1.1s">route         base → arbitrum</text>
+  <text x="24" y="104" class="l" style="animation-delay:1.3s"><tspan class="dim">rail          </tspan><tspan class="grn">CCTP v2 — arrives whole, zero bridge fee</tspan></text>
+  <text x="24" y="124" class="l" style="animation-delay:1.5s"><tspan class="dim">expected out  </tspan><tspan class="cmd">0.043178 ETH</tspan><tspan class="dim"> via uniswap (tier 500)</tspan></text>
+  <text x="24" y="144" class="l dim" style="animation-delay:1.7s">protocol fee  1 bps (0.01%)</text>
+
+  <text x="24" y="178" class="l" style="animation-delay:2.6s"><tspan class="p">$</tspan> <tspan class="cmd">npx invictae swap 100 usdc@base eth@arbitrum --yes</tspan></text>
+  <text x="24" y="204" class="l" style="animation-delay:3.6s"><tspan class="grn">✓</tspan><tspan class="cmd"> zapCctp  </tspan><tspan class="dim">0x9afcdcd7…93bc</tspan></text>
+  <text x="24" y="226" class="l" style="animation-delay:4.4s"><tspan class="grn">✓</tspan><tspan class="dim"> source_confirmed — confirmed on base in block 53246949</tspan></text>
+  <text x="24" y="246" class="l" style="animation-delay:5.4s"><tspan class="grn">✓</tspan><tspan class="dim"> attested — Circle attested the burn</tspan></text>
+  <text x="24" y="266" class="l" style="animation-delay:6.6s"><tspan class="grn">✓</tspan><tspan class="cmd"> executed — </tspan><tspan class="grn">0.0432 ETH delivered on arbitrum</tspan></text>
+
+  <text x="24" y="302" class="l" style="animation-delay:7.6s"><tspan class="dim">stables · native coins · tokenized stocks · </tspan><tspan class="acc">12 chains</tspan><tspan class="dim"> · built for agents</tspan></text>
+  <text x="24" y="322" class="l" style="animation-delay:8s"><tspan class="p">$</tspan> <tspan class="cmd">█</tspan></text>
+</svg>

@@ -4,23 +4,7 @@
 
 **Agentic cross-chain swaps.** Pay with what you hold on one chain, receive what you want on another — stablecoins, native coins, blue chips, and tokenized U.S. stocks — in one approval. No solvers, no off-chain fill trust, and an interface built to be driven by AI agents as much as by humans: JSON everywhere, streamed lifecycle events, and a self-describing schema.
 
-```
-$ invictae swap --from base --to arbitrum --pay eth --amount 0.5 --token-out eth
-
-Swap 0.5 eth → eth  buyer 0xAb…
-  route         base → arbitrum
-  rail          CCTP v2 — lossless, relayer completes
-  source swap   uniswap (tier 500)
-  arrives       ~1152.42 USDC
-  expected out  0.494418 WETH → native via uniswap (tier 500)
-  bridge fee    none (standard finality ~1–15 min)
-
-Broadcast 1 transaction from 0xAb… on base? [y/N] y
-✓ zapNative  0x9afc…
-[12:01:05] ✓ source_confirmed — confirmed on base in block 53246949
-[12:03:11] ✓ attested — Circle attested the burn
-[12:03:40] ✓ executed — swap executed: 0.4951 WETH to 0xAb…
-```
+<img src="assets/demo.svg" alt="invictae demo: quote and execute a cross-chain swap, followed live to its on-chain outcome" width="720">
 
 ## How it works
 

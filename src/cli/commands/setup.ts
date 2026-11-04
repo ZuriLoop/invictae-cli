@@ -5,6 +5,8 @@ import path from 'path'
 import { Command } from 'commander'
 import { ethers } from 'ethers'
 
+import os from 'os'
+
 import { loadConfig, provider, ERC20_ABI } from '../../lib/common'
 import { prepare } from '../../lib/prepare'
 import { c, kv, note, ok, spinner, warn } from '../ui'
@@ -67,6 +69,59 @@ Next:
   ${c.cyan('invictae tokens ethereum')}                                  tickers incl. tokenized stocks
   ${c.cyan('invictae init')}                                             set up signing + guardrails
 `)
+        })
+
+    program
+        .command('agent-setup')
+        .description('Wire the invictae MCP server into your coding agent (Claude Code project, Claude Desktop, or Cursor)')
+        .option('--apply <target>', "write the config: 'project' (.mcp.json), 'claude-desktop', or 'cursor'")
+        .action((opts) => {
+            const entry = { command: 'npx', args: ['-y', '-p', 'invictae', 'invictae-mcp'] }
+            const targets: Record<string, { file: string; wrap: (existing: Record<string, unknown>) => Record<string, unknown> }> = {
+                project: {
+                    file: path.resolve(process.cwd(), '.mcp.json'),
+                    wrap: (e) => ({ ...e, mcpServers: { ...(e.mcpServers as object), invictae: entry } }),
+                },
+                'claude-desktop': {
+                    file: path.join(
+                        os.homedir(),
+                        process.platform === 'darwin' ? 'Library/Application Support/Claude/claude_desktop_config.json' : '.config/Claude/claude_desktop_config.json'
+                    ),
+                    wrap: (e) => ({ ...e, mcpServers: { ...(e.mcpServers as object), invictae: entry } }),
+                },
+                cursor: {
+                    file: path.join(os.homedir(), '.cursor', 'mcp.json'),
+                    wrap: (e) => ({ ...e, mcpServers: { ...(e.mcpServers as object), invictae: entry } }),
+                },
+            }
+
+            if (!opts.apply) {
+                console.log(`
+${c.bold('Add the invictae MCP server to your agent')}
+`)
+                console.log(`${c.dim('Any MCP client — add to its servers config:')}
+  ${JSON.stringify({ invictae: entry })}
+`)
+                console.log(`${c.dim('Or let this command write it:')}
+  ${c.cyan('invictae agent-setup --apply project')}         ${c.dim('.mcp.json in this directory (Claude Code picks it up)')}
+  ${c.cyan('invictae agent-setup --apply claude-desktop')}  ${c.dim('Claude Desktop')}
+  ${c.cyan('invictae agent-setup --apply cursor')}          ${c.dim('Cursor')}
+
+${c.dim('The server only quotes/tracks by default; executing swaps additionally needs PRIVATE_KEY in its environment and an explicit confirm per swap. Guardrails: invictae.policy.json (see invictae init).')}`)
+                return
+            }
+            const target = targets[opts.apply]
+            if (!target) throw new Error(`unknown target '${opts.apply}' — use project, claude-desktop, or cursor`)
+            let existing: Record<string, unknown> = {}
+            try {
+                existing = JSON.parse(fs.readFileSync(target.file, 'utf8'))
+            } catch {
+                // absent or invalid — start fresh
+            }
+            fs.mkdirSync(path.dirname(target.file), { recursive: true })
+            fs.writeFileSync(target.file, JSON.stringify(target.wrap(existing), null, 2) + '\n')
+            ok(`invictae MCP server added to ${target.file}`)
+            note('restart the agent to pick it up; try: "quote 100 usdc on base to eth on arbitrum"')
         })
 
     program
