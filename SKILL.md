@@ -10,9 +10,11 @@ You drive the `invictae` CLI. It is designed for agents: pass `--json` and stdou
 ## Setup check
 
 ```bash
-invictae --version || npm install -g invictae
-invictae doctor --json   # verifies every chain's wiring; ok:true means ready
+npx -y invictae --version
+npx -y invictae doctor --json   # verifies every chain's wiring; ok:true means ready
 ```
+
+All commands below run the same way: `npx -y invictae <command>` (written as `invictae <command>` for brevity).
 
 `PRIVATE_KEY` in the environment is needed only for `swap`, `relay`, and `refunds --claim`. Never print or echo it.
 

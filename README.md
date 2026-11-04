@@ -28,12 +28,16 @@ Every swap is one or two transactions to two fixed, auditable contracts per chai
 
 ## Install
 
+No install — run it with npx:
+
 ```bash
-npm install -g invictae     # or: npx invictae …
-invictae --help
+npx invictae --help
+npx invictae quote 100 usdc@base eth@arbitrum
 ```
 
-From source: `git clone … && npm install && npm run build && npm link`.
+(Examples below write `invictae …`; `alias invictae="npx -y invictae"` if you like it short.)
+
+From source: `git clone … && npm install && npm run build && node dist/cli/index.js`.
 Configuration: copy `.env.example` to `.env` — public RPC fallbacks work out of the box; `PRIVATE_KEY` is only needed for signing commands.
 
 ## Examples
@@ -115,7 +119,7 @@ invictae schema                                  # the whole interface, as JSON
 **MCP server** — `invictae-mcp` ships in this package: a dependency-free Model Context Protocol server (stdio) exposing `get_quote`, `plan_swap`, `execute_swap`, `track_swap`, `get_balances`, `list_chains`, `get_route`, and `list_tokens`. Point any MCP client at it:
 
 ```json
-{ "mcpServers": { "invictae": { "command": "invictae-mcp" } } }
+{ "mcpServers": { "invictae": { "command": "npx", "args": ["-y", "-p", "invictae", "invictae-mcp"] } } }
 ```
 
 `execute_swap` is deliberately hard to misuse: it requires `confirm: true` (to be set only after the user approved that exact swap), refuses CoinGecko-resolved tokens outright, honors the policy file below, supports idempotency keys, and needs `PRIVATE_KEY` in the server's environment — read tools never do.
