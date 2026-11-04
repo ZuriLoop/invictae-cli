@@ -1,7 +1,7 @@
 {
   "name": "invictae",
   "version": "0.2.0",
-  "description": "Cross-chain swap CLI \u2014 stables, native coins, blue chips, and tokenized stocks across 12 chains",
+  "description": "Agentic cross-chain swap CLI \u2014 stables, native coins, and tokenized stocks across 12 chains, in one command.",
   "license": "MIT",
   "author": "ZuriLoop",
   "repository": {

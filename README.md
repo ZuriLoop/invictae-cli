@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ZuriLoop/invictae-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ZuriLoop/invictae-cli/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 
-Cross-chain swap CLI: pay with what you hold on one chain, receive what you want on another — stablecoins, native coins, blue chips, and tokenized U.S. stocks — in one approval, with no solvers and no off-chain fill trust.
+**Agentic cross-chain swaps.** Pay with what you hold on one chain, receive what you want on another — stablecoins, native coins, blue chips, and tokenized U.S. stocks — in one approval. No solvers, no off-chain fill trust, and an interface built to be driven by AI agents as much as by humans: JSON everywhere, streamed lifecycle events, and a self-describing schema.
 
 ```
 $ invictae swap --from base --to arbitrum --pay eth --amount 0.5 --token-out eth
