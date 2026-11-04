@@ -20,6 +20,7 @@ import { registerTrack } from './commands/track'
 import { registerInfo } from './commands/info'
 import { registerAccount } from './commands/account'
 import { registerDoctor } from './commands/doctor'
+import { printWelcome, registerSetup } from './commands/setup'
 import { c } from './ui'
 
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'))
@@ -79,13 +80,19 @@ program
         console.log(JSON.stringify(schema, null, 2))
     })
 
+registerSetup(program)
 registerTrade(program)
 registerTrack(program)
 registerInfo(program)
 registerAccount(program)
 registerDoctor(program)
 
-program.parseAsync(process.argv).catch((err) => {
-    console.error(`${c.red('error:')} ${(err as Error).message}`)
-    process.exit(1)
-})
+// Bare run in a terminal: show the 10-second pitch instead of a wall of help.
+if (process.argv.length <= 2 && process.stdout.isTTY) {
+    printWelcome()
+} else {
+    program.parseAsync(process.argv).catch((err) => {
+        console.error(`${c.red('error:')} ${(err as Error).message}`)
+        process.exit(1)
+    })
+}
