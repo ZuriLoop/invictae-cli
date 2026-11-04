@@ -15,7 +15,7 @@ const COMPOSER_READ_ABI = [
 ]
 
 function resolveAddress(explicit?: string): string {
-    if (explicit) return ethers.utils.getAddress(explicit)
+    if (explicit) return ethers.getAddress(explicit)
     const key = process.env.PRIVATE_KEY
     if (!key) throw new Error('pass --address or set PRIVATE_KEY')
     return new ethers.Wallet(key).address
@@ -38,7 +38,7 @@ export function registerAccount(program: Command): void {
             const rows: string[][] = []
             const native = await p.getBalance(who)
             json.native = { amount: native.toString(), decimals: 18 }
-            rows.push(['native', ethers.utils.formatEther(native), ''])
+            rows.push(['native', ethers.formatEther(native), ''])
 
             const entries: [string, string][] = [
                 ...Object.entries(chain.stables),
@@ -47,10 +47,11 @@ export function registerAccount(program: Command): void {
             for (const [sym, addr] of entries) {
                 try {
                     const t = new ethers.Contract(addr, ERC20_ABI, p)
-                    const [bal, dec] = await Promise.all([t.balanceOf(who), t.decimals()])
-                    if (bal.isZero()) continue
+                    const [bal, decRaw] = await Promise.all([t.balanceOf(who), t.decimals()])
+                    const dec = Number(decRaw)
+                    if (bal === 0n) continue
                     json[sym] = { amount: bal.toString(), address: addr, decimals: dec }
-                    rows.push([sym, ethers.utils.formatUnits(bal, dec), c.dim(addr)])
+                    rows.push([sym, ethers.formatUnits(bal, dec), c.dim(addr)])
                 } catch {
                     // unreadable token — skip
                 }
@@ -81,11 +82,11 @@ export function registerAccount(program: Command): void {
                 ...Object.entries(chain.stables),
                 ...(chain.wrappedNative ? ([['wrapped native', chain.wrappedNative]] as [string, string][]) : []),
             ]
-            const owed: { sym: string; addr: string; amount: ethers.BigNumber; dec: number }[] = []
+            const owed: { sym: string; addr: string; amount: bigint; dec: number }[] = []
             for (const [sym, addr] of candidates) {
-                const amount: ethers.BigNumber = await composer.refundsOwed(addr, who)
-                if (amount.isZero()) continue
-                const dec: number = await new ethers.Contract(addr, ERC20_ABI, p).decimals()
+                const amount: bigint = await composer.refundsOwed(addr, who)
+                if (amount === 0n) continue
+                const dec: number = Number(await new ethers.Contract(addr, ERC20_ABI, p).decimals())
                 owed.push({ sym, addr, amount, dec })
             }
             if (owed.length === 0) {
@@ -97,7 +98,7 @@ export function registerAccount(program: Command): void {
                 emitJson({ chain: chain.name, address: who, owed: owed.map((o) => ({ token: o.addr, symbol: o.sym, amount: o.amount.toString(), decimals: o.dec })) })
                 return
             }
-            if (!opts.json) table(['token', 'owed'], owed.map((o) => [o.sym, ethers.utils.formatUnits(o.amount, o.dec)]))
+            if (!opts.json) table(['token', 'owed'], owed.map((o) => [o.sym, ethers.formatUnits(o.amount, o.dec)]))
             if (!opts.claim) {
                 note(`claim with: invictae refunds --chain ${chain.name} --address ${who} --claim`)
                 return
@@ -107,10 +108,10 @@ export function registerAccount(program: Command): void {
             const signer = new ethers.Wallet(key, p)
             const claims: { token: string; amount: string; txHash: string }[] = []
             for (const o of owed) {
-                const tx = await composer.connect(signer).claimRefund(o.addr, who)
+                const tx = await (composer.connect(signer) as ethers.Contract).getFunction('claimRefund')(o.addr, who)
                 const rc = await tx.wait()
-                claims.push({ token: o.addr, amount: o.amount.toString(), txHash: rc.transactionHash })
-                ok(`claimed ${ethers.utils.formatUnits(o.amount, o.dec)} ${o.sym} → ${who}  ${c.dim(rc.transactionHash)}`)
+                claims.push({ token: o.addr, amount: o.amount.toString(), txHash: rc!.hash })
+                ok(`claimed ${ethers.formatUnits(o.amount, o.dec)} ${o.sym} → ${who}  ${c.dim(rc.transactionHash)}`)
             }
             if (opts.json) emitJson({ chain: chain.name, address: who, claimed: claims })
         })
@@ -133,15 +134,16 @@ export function registerAccount(program: Command): void {
 
             const rows: [number, string[]][] = []
             const jsonRows: { block: number; outcome: string; txHash: string; args: Record<string, string> }[] = []
-            const push = async (eventName: string, label: string, fmt: (a: ethers.utils.Result) => string) => {
+            const push = async (eventName: string, label: string, fmt: (a: ethers.Result) => string) => {
                 const events = await composer.queryFilter(composer.filters[eventName](who), from, latest)
                 for (const e of events) {
-                    rows.push([e.blockNumber, [String(e.blockNumber), label, fmt(e.args!), c.dim(e.transactionHash)]])
+                    if (!('args' in e)) continue
+                    rows.push([e.blockNumber, [String(e.blockNumber), label, fmt(e.args), c.dim(e.transactionHash)]])
                     jsonRows.push({
                         block: e.blockNumber,
                         outcome: eventName,
                         txHash: e.transactionHash,
-                        args: Object.fromEntries(Object.entries(e.args!).filter(([k]) => isNaN(Number(k))).map(([k, v]) => [k, String(v)])),
+                        args: Object.fromEntries(Object.entries(e.args.toObject()).map(([k, v]) => [k, String(v)])),
                     })
                 }
             }

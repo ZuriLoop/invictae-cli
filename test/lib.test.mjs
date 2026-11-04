@@ -118,7 +118,6 @@ test('registry addresses are well-formed and chains exist', () => {
 
 test('policy enforcement blocks each violation with a precise reason', async () => {
     const { enforcePolicy } = await import('../dist/lib/policy.js')
-    const { BigNumber } = (await import('ethers')).default ?? (await import('ethers'))
     const prep = {
         srcChain: { name: 'base' },
         dstChain: { name: 'bnb' },
@@ -126,7 +125,7 @@ test('policy enforcement blocks each violation with a precise reason', async () 
         outVia: 'coingecko',
         stableKey: 'usdc',
         dstStableDecimals: 6,
-        dstReceived: BigNumber.from('2000000000'), // 2000 USDC
+        dstReceived: 2000000000n, // 2000 USDC
     }
     assert.throws(() => enforcePolicy({ allowedChains: ['base'] }, prep, '0x1111111111111111111111111111111111111111'), /chain 'bnb'/)
     assert.throws(() => enforcePolicy({ registryTokensOnly: true }, prep, '0x1111111111111111111111111111111111111111'), /token out resolved via 'coingecko'/)
@@ -157,7 +156,6 @@ test('idempotency ledger round-trips keys', async () => {
 
 test('policy escalateAbove returns escalate instead of throwing', async () => {
     const { enforcePolicy } = await import('../dist/lib/policy.js')
-    const { BigNumber } = (await import('ethers')).default ?? (await import('ethers'))
     const prep = {
         srcChain: { name: 'base' },
         dstChain: { name: 'arbitrum' },
@@ -165,7 +163,7 @@ test('policy escalateAbove returns escalate instead of throwing', async () => {
         outVia: 'registry',
         stableKey: 'usdc',
         dstStableDecimals: 6,
-        dstReceived: BigNumber.from('500000000'), // 500 USDC
+        dstReceived: 500000000n, // 500 USDC
     }
     assert.equal(enforcePolicy({ escalateAbove: '100' }, prep, '0x1111111111111111111111111111111111111111'), 'escalate')
     assert.equal(enforcePolicy({ escalateAbove: '1000' }, prep, '0x1111111111111111111111111111111111111111'), 'ok')

@@ -96,7 +96,7 @@ export function resolveToken(chain: Chain, nameOrAddress: string): TokenResoluti
             `unknown token '${nameOrAddress}' on ${chain.name} — use 'eth'/'native', a registry symbol (${known || 'none registered'}), or an ERC-20 address`
         )
     }
-    return { address: ethers.utils.getAddress(nameOrAddress), native: false, via: 'address' }
+    return { address: ethers.getAddress(nameOrAddress), native: false, via: 'address' }
 }
 
 /**
@@ -125,7 +125,7 @@ export async function resolveTokenAny(chain: Chain, nameOrAddress: string): Prom
     const d = (await detail.json()) as { platforms?: Record<string, string> }
     const address = d.platforms?.[chain.coingeckoPlatform!]
     if (!address) throw new Error(`'${coin.name}' has no ${chain.name} deployment per CoinGecko — pass the ERC-20 address if one exists`)
-    const checksummed = ethers.utils.getAddress(address)
+    const checksummed = ethers.getAddress(address)
     const onchain: string = await new ethers.Contract(checksummed, ERC20_ABI, provider(chain)).symbol().catch(() => '')
     if (onchain.toLowerCase() !== ticker) {
         throw new Error(
@@ -165,8 +165,8 @@ export function getChain(config: ChainsConfig, nameOrId: string | number): Chain
     return chain
 }
 
-export function provider(chain: Chain): ethers.providers.JsonRpcProvider {
-    return new ethers.providers.JsonRpcProvider(process.env[chain.rpcEnv] ?? chain.publicRpc)
+export function provider(chain: Chain): ethers.JsonRpcProvider {
+    return new ethers.JsonRpcProvider(process.env[chain.rpcEnv] ?? chain.publicRpc)
 }
 
 /**
@@ -196,10 +196,10 @@ export function encodeOrder(
     minAmountOut: ethers.BigNumberish,
     deadline: number,
     swapPath: string,
-    router: string = ethers.constants.AddressZero,
+    router: string = ethers.ZeroAddress,
     maxRelayFee: ethers.BigNumberish = 0
 ): string {
-    return ethers.utils.defaultAbiCoder.encode(
+    return ethers.AbiCoder.defaultAbiCoder().encode(
         ['address', 'address', 'uint256', 'uint256', 'address', 'uint256', 'bytes'],
         [buyer, tokenOut, minAmountOut, deadline, router, maxRelayFee, swapPath]
     )
@@ -214,7 +214,7 @@ export function encodePath(tokens: string[], fees: number[]): string {
         types.push('uint24', 'address')
         values.push(fees[i], tokens[i + 1])
     }
-    return ethers.utils.solidityPack(types, values)
+    return ethers.solidityPacked(types, values)
 }
 
 /** Messaging options: receive gas top-up + compose gas (+ optional native value).
@@ -222,11 +222,11 @@ export function encodePath(tokens: string[], fees: number[]): string {
  *  reference SDK): 0x0003 | [worker 0x01, size, type 0x01, gas u128] |
  *  [worker 0x01, size, type 0x03, index u16, gas u128, (value u128)]. */
 export function composeOptions(composeGas: number, composeValue: ethers.BigNumberish = 0): string {
-    const u128 = (v: ethers.BigNumberish) => ethers.utils.hexZeroPad(ethers.BigNumber.from(v).toHexString(), 16).slice(2)
-    const u16 = (v: number) => ethers.utils.hexZeroPad(ethers.BigNumber.from(v).toHexString(), 2).slice(2)
-    const value = ethers.BigNumber.from(composeValue)
+    const u128 = (v: ethers.BigNumberish) => ethers.toBeHex(v, 16).slice(2)
+    const u16 = (v: number) => ethers.toBeHex(v, 2).slice(2)
+    const value = BigInt(composeValue)
     const receiveOpt = '01' + u16(17) + '01' + u128(300_000)
-    const composeParams = '03' + u16(0) + u128(composeGas) + (value.isZero() ? '' : u128(value))
+    const composeParams = '03' + u16(0) + u128(composeGas) + (value === 0n ? '' : u128(value))
     const composeOpt = '01' + u16(composeParams.length / 2) + composeParams
     return '0x0003' + receiveOpt + composeOpt
 }
@@ -276,10 +276,10 @@ export async function quoteExactInput(
     chain: Chain,
     quoter: string,
     swapPath: string,
-    amountIn: ethers.BigNumber
-): Promise<ethers.BigNumber> {
+    amountIn: bigint
+): Promise<bigint> {
     const q = new ethers.Contract(quoter, QUOTER_V2_ABI, provider(chain))
-    const result = await q.callStatic.quoteExactInput(swapPath, amountIn)
+    const result = await q.quoteExactInput.staticCall(swapPath, amountIn)
     return result.amountOut
 }
 
@@ -289,7 +289,7 @@ export interface BestRoute {
     router: string
     tier: number
     path: string
-    amountOut: ethers.BigNumber
+    amountOut: bigint
 }
 
 /**
@@ -302,38 +302,41 @@ export async function bestVenueRoute(
     chain: Chain,
     tokenIn: string,
     tokenOut: string,
-    amountIn: ethers.BigNumber
+    amountIn: bigint
 ): Promise<BestRoute> {
     const probes: Promise<BestRoute | null>[] = []
     const probe = (name: string, venue: Venue, path: string, tier: number) =>
         quoteExactInput(chain, venue.quoter!, path, amountIn)
             .then((amountOut) => ({
                 venue: name,
-                router: venue.default ? ethers.constants.AddressZero : venue.router!,
+                router: venue.default ? ethers.ZeroAddress : venue.router!,
                 tier,
                 path,
                 amountOut,
             }))
             .catch(() => null)
 
-    const mid = chain.wrappedNative
-    const useMid = mid && mid.toLowerCase() !== tokenIn.toLowerCase() && mid.toLowerCase() !== tokenOut.toLowerCase()
+    // middle hops: the wrapped native plus the chain's other stables (many
+    // tokens are paired only against USDC/WETH)
+    const mids = [chain.wrappedNative, ...Object.values(chain.stables)].filter(
+        (m): m is string => Boolean(m) && m!.toLowerCase() !== tokenIn.toLowerCase() && m!.toLowerCase() !== tokenOut.toLowerCase()
+    )
     for (const [name, venue] of Object.entries(chain.venues)) {
         if (!venue.router || !venue.quoter) continue
         for (const tier of venue.tiers) {
             probes.push(probe(name, venue, encodePath([tokenIn, tokenOut], [tier]), tier))
-            if (useMid) {
+            for (const mid of mids) {
                 for (const tier2 of venue.tiers) {
-                    probes.push(probe(name, venue, encodePath([tokenIn, mid!, tokenOut], [tier, tier2]), tier2))
+                    probes.push(probe(name, venue, encodePath([tokenIn, mid, tokenOut], [tier, tier2]), tier2))
                 }
             }
         }
     }
-    const routes = (await Promise.all(probes)).filter((r): r is BestRoute => r !== null && !r.amountOut.isZero())
+    const routes = (await Promise.all(probes)).filter((r): r is BestRoute => r !== null && r.amountOut !== 0n)
     if (routes.length === 0) {
         throw new Error(`no venue on ${chain.name} quotes ${tokenIn} -> ${tokenOut} (no pools?)`)
     }
-    routes.sort((a, b) => (b.amountOut.gt(a.amountOut) ? 1 : -1))
+    routes.sort((a, b) => (b.amountOut > a.amountOut ? 1 : -1))
     return routes[0]
 }
 
@@ -345,18 +348,18 @@ export async function bestVenueRouteExactOut(
     chain: Chain,
     tokenIn: string,
     tokenOut: string,
-    amountOut: ethers.BigNumber
-): Promise<BestRoute & { amountIn: ethers.BigNumber }> {
-    const probes: Promise<(BestRoute & { amountIn: ethers.BigNumber }) | null>[] = []
+    amountOut: bigint
+): Promise<BestRoute & { amountIn: bigint }> {
+    const probes: Promise<(BestRoute & { amountIn: bigint }) | null>[] = []
     const probe = (name: string, venue: Venue, forwardTokens: string[], forwardTiers: number[], tier: number) => {
         const forward = encodePath(forwardTokens, forwardTiers)
         const reversed = encodePath([...forwardTokens].reverse(), [...forwardTiers].reverse())
         const q = new ethers.Contract(venue.quoter!, QUOTER_V2_ABI, provider(chain))
-        return q.callStatic
-            .quoteExactOutput(reversed, amountOut)
-            .then((r: { amountIn: ethers.BigNumber }) => ({
+        return q.quoteExactOutput
+            .staticCall(reversed, amountOut)
+            .then((r: { amountIn: bigint }) => ({
                 venue: name,
-                router: venue.default ? ethers.constants.AddressZero : venue.router!,
+                router: venue.default ? ethers.ZeroAddress : venue.router!,
                 tier,
                 path: forward,
                 amountOut,
@@ -364,26 +367,27 @@ export async function bestVenueRouteExactOut(
             }))
             .catch(() => null)
     }
-    const mid = chain.wrappedNative
-    const useMid = mid && mid.toLowerCase() !== tokenIn.toLowerCase() && mid.toLowerCase() !== tokenOut.toLowerCase()
+    const mids = [chain.wrappedNative, ...Object.values(chain.stables)].filter(
+        (m): m is string => Boolean(m) && m!.toLowerCase() !== tokenIn.toLowerCase() && m!.toLowerCase() !== tokenOut.toLowerCase()
+    )
     for (const [name, venue] of Object.entries(chain.venues)) {
         if (!venue.router || !venue.quoter) continue
         for (const tier of venue.tiers) {
             probes.push(probe(name, venue, [tokenIn, tokenOut], [tier], tier))
-            if (useMid) {
+            for (const mid of mids) {
                 for (const tier2 of venue.tiers) {
-                    probes.push(probe(name, venue, [tokenIn, mid!, tokenOut], [tier, tier2], tier2))
+                    probes.push(probe(name, venue, [tokenIn, mid, tokenOut], [tier, tier2], tier2))
                 }
             }
         }
     }
     const routes = (await Promise.all(probes)).filter(
-        (r): r is BestRoute & { amountIn: ethers.BigNumber } => r !== null && !r.amountIn.isZero()
+        (r): r is BestRoute & { amountIn: bigint } => r !== null && r.amountIn !== 0n
     )
     if (routes.length === 0) {
         throw new Error(`no venue on ${chain.name} quotes exact-out ${tokenIn} -> ${tokenOut}`)
     }
-    routes.sort((a, b) => (a.amountIn.lt(b.amountIn) ? -1 : 1))
+    routes.sort((a, b) => (a.amountIn < b.amountIn ? -1 : 1))
     return routes[0]
 }
 
@@ -392,24 +396,24 @@ export async function quoteExactOutputOnRoute(
     chain: Chain,
     venueName: string,
     route: BestRoute,
-    amountOut: ethers.BigNumber
-): Promise<ethers.BigNumber> {
+    amountOut: bigint
+): Promise<bigint> {
     const venue = chain.venues[venueName]
     if (!venue?.quoter) throw new Error(`venue ${venueName} has no quoter`)
     // QuoterV2 exact-output paths run tokenOut -> tokenIn: reverse the packed path
-    const bytes = ethers.utils.arrayify(route.path)
+    const bytes = ethers.getBytes(route.path)
     const tokens: string[] = []
     const tiers: number[] = []
     for (let i = 0; i < bytes.length; ) {
-        tokens.push(ethers.utils.hexlify(bytes.slice(i, i + 20)))
+        tokens.push(ethers.hexlify(bytes.slice(i, i + 20)))
         i += 20
         if (i < bytes.length) {
-            tiers.push(parseInt(ethers.utils.hexlify(bytes.slice(i, i + 3)), 16))
+            tiers.push(parseInt(ethers.hexlify(bytes.slice(i, i + 3)), 16))
             i += 3
         }
     }
     const reversed = encodePath(tokens.reverse(), tiers.reverse())
     const q = new ethers.Contract(venue.quoter, QUOTER_V2_ABI, provider(chain))
-    const result = await q.callStatic.quoteExactOutput(reversed, amountOut)
+    const result = await q.quoteExactOutput.staticCall(reversed, amountOut)
     return result.amountIn
 }

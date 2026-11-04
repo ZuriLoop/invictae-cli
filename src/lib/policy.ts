@@ -76,10 +76,10 @@ export function enforcePolicy(policy: Policy, prep: Prepared, buyer: string): 'o
         if (!allowed.includes(buyer.toLowerCase())) throw new Error(`policy: recipient ${buyer} is not in allowedRecipients`)
     }
     if (policy.maxStablePerSwap) {
-        const cap = ethers.utils.parseUnits(policy.maxStablePerSwap, prep.dstStableDecimals)
-        if (prep.dstReceived.gt(cap)) {
+        const cap = ethers.parseUnits(policy.maxStablePerSwap, prep.dstStableDecimals)
+        if (prep.dstReceived > cap) {
             throw new Error(
-                `policy: swap moves ${ethers.utils.formatUnits(prep.dstReceived, prep.dstStableDecimals)} ${prep.stableKey.toUpperCase()}, above maxStablePerSwap ${policy.maxStablePerSwap}`
+                `policy: swap moves ${ethers.formatUnits(prep.dstReceived, prep.dstStableDecimals)} ${prep.stableKey.toUpperCase()}, above maxStablePerSwap ${policy.maxStablePerSwap}`
             )
         }
     }
@@ -90,8 +90,8 @@ export function enforcePolicy(policy: Policy, prep: Prepared, buyer: string): 'o
         }
     }
     if (policy.escalateAbove) {
-        const bar = ethers.utils.parseUnits(policy.escalateAbove, prep.dstStableDecimals)
-        if (prep.dstReceived.gt(bar)) return 'escalate'
+        const bar = ethers.parseUnits(policy.escalateAbove, prep.dstStableDecimals)
+        if (prep.dstReceived > bar) return 'escalate'
     }
     return 'ok'
 }

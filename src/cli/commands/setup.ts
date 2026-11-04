@@ -37,11 +37,11 @@ export function registerSetup(program: Command): void {
             const demos: { label: string; args: Parameters<typeof prepare>[0] }[] = [
                 {
                     label: '100 USDC on Base → ETH on Arbitrum',
-                    args: { from: 'base', to: 'arbitrum', pay: 'usdc', amount: '100', tokenOut: 'eth', exactOut: false, slippageBps: 100, composeGas: 600_000, relayFeeCap: '0', deadlineSeconds: 1800, buyer: ethers.constants.AddressZero },
+                    args: { from: 'base', to: 'arbitrum', pay: 'usdc', amount: '100', tokenOut: 'eth', exactOut: false, slippageBps: 100, composeGas: 600_000, relayFeeCap: '0', deadlineSeconds: 1800, buyer: ethers.ZeroAddress },
                 },
                 {
                     label: '1000 USDT on Ethereum → LINK on Arbitrum',
-                    args: { from: 'ethereum', to: 'arbitrum', pay: 'usdt', amount: '1000', tokenOut: 'LINK', exactOut: false, slippageBps: 100, composeGas: 600_000, relayFeeCap: '0', deadlineSeconds: 1800, buyer: ethers.constants.AddressZero },
+                    args: { from: 'ethereum', to: 'arbitrum', pay: 'usdt', amount: '1000', tokenOut: 'LINK', exactOut: false, slippageBps: 100, composeGas: 600_000, relayFeeCap: '0', deadlineSeconds: 1800, buyer: ethers.ZeroAddress },
                 },
             ]
 
@@ -50,12 +50,13 @@ export function registerSetup(program: Command): void {
                 try {
                     const prep = await prepare(d.args)
                     const outErc20 = new ethers.Contract(prep.tokenOutResolved, ERC20_ABI, provider(prep.dstChain))
-                    const [sym, dec] = await Promise.all([outErc20.symbol(), outErc20.decimals()])
+                    const [sym, decRaw] = await Promise.all([outErc20.symbol(), outErc20.decimals()])
+                    const dec = Number(decRaw)
                     spin.stop()
                     console.log(c.bold(`  ${d.label}`))
                     kv([
                         ['rail', prep.rail === 'cctp' ? 'CCTP burn/mint — arrives whole, zero bridge fee' : 'token bridge — fully on-chain'],
-                        ['you receive', c.green(`~${ethers.utils.formatUnits(prep.expectedOut, dec)} ${sym}`) + c.dim(` via ${prep.dstRoute?.venue ?? 'bridge'}`)],
+                        ['you receive', c.green(`~${ethers.formatUnits(prep.expectedOut, dec)} ${sym}`) + c.dim(` via ${prep.dstRoute?.venue ?? 'bridge'}`)],
                         ['protocol fee', `${config.feeBps} bps (0.0${config.feeBps}%)`],
                     ])
                     console.log()

@@ -105,8 +105,8 @@ export function registerTrack(program: Command): void {
             const key = process.env.PRIVATE_KEY
             if (!key) throw new Error('PRIVATE_KEY missing')
             const signer = new ethers.Wallet(key, provider(dstChain))
-            const dstDec: number = await new ethers.Contract(dstChain.stables.usdc, ERC20_ABI, signer.provider).decimals()
-            const relayFee = ethers.utils.parseUnits(opts.fee, dstDec)
+            const dstDec: number = Number(await new ethers.Contract(dstChain.stables.usdc, ERC20_ABI, signer.provider).decimals())
+            const relayFee = ethers.parseUnits(opts.fee, dstDec)
 
             const irisApi = config.cctp?.irisApi ?? 'https://iris-api.circle.com'
             const url = `${irisApi}/v2/messages/${srcChain.cctp.domain}?transactionHash=${opts.tx}`
@@ -132,13 +132,13 @@ export function registerTrack(program: Command): void {
                 signer.provider
             )
             for (const { message, attestation } of messages) {
-                const msgHash = ethers.utils.keccak256(message)
+                const msgHash = ethers.keccak256(message)
                 if (await composer.processedCctpMessages(msgHash)) {
                     note('already processed — skipping')
                     continue
                 }
-                const nonce = ethers.utils.hexDataSlice(message, 12, 44)
-                const method = (await transmitter.usedNonces(nonce)).gt(0) ? 'executeHook' : 'relayAndSwap'
+                const nonce = ethers.dataSlice(message, 12, 44)
+                const method = (await transmitter.usedNonces(nonce)) > 0n ? 'executeHook' : 'relayAndSwap'
                 const s = spinner(`submitting ${method}…`)
                 const tx = await composer[method](message, attestation, relayFee)
                 const rc = await tx.wait()

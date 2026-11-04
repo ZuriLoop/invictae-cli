@@ -98,8 +98,9 @@ export function quoteJson(prep: Prepared) {
 
 async function describe(prep: Prepared, opts: Record<string, unknown>): Promise<[string, string][]> {
     const outErc20 = new ethers.Contract(prep.tokenOutResolved, ERC20_ABI, provider(prep.dstChain))
-    const [outSymRaw, outDec] = await Promise.all([outErc20.symbol(), outErc20.decimals()])
-    const outSym = prep.tokenOut === ethers.constants.AddressZero ? `${outSymRaw} → native` : outSymRaw
+    const [outSymRaw, outDecRaw] = await Promise.all([outErc20.symbol(), outErc20.decimals()])
+    const outDec = Number(outDecRaw)
+    const outSym = prep.tokenOut === ethers.ZeroAddress ? `${outSymRaw} → native` : outSymRaw
     const rows: [string, string][] = []
     rows.push(['route', `${prep.srcChain.name} → ${prep.dstChain.name}`])
     if (prep.payVia === 'coingecko') {
@@ -107,7 +108,7 @@ async function describe(prep: Prepared, opts: Record<string, unknown>): Promise<
     }
     rows.push([
         'token out',
-        `${prep.tokenOut === ethers.constants.AddressZero ? `native (unwraps ${prep.tokenOutResolved})` : prep.tokenOutResolved}` +
+        `${prep.tokenOut === ethers.ZeroAddress ? `native (unwraps ${prep.tokenOutResolved})` : prep.tokenOutResolved}` +
             (prep.outVia === 'coingecko' ? ` ${c.yellow(`← resolved via CoinGecko (${prep.outName}) — verify this address`)}` : ''),
     ])
     rows.push([
@@ -115,25 +116,25 @@ async function describe(prep: Prepared, opts: Record<string, unknown>): Promise<
         prep.rail === 'cctp' ? c.cyan('CCTP v2 — lossless, relayer completes') : c.cyan(`token bridge (${prep.bridgeSrc.slice(0, 10)}…)`),
     ])
     if (prep.srcRoute) rows.push(['source swap', `${prep.srcRoute.venue} (tier ${prep.srcRoute.tier})`])
-    rows.push(['arrives', `~${ethers.utils.formatUnits(prep.dstReceived, prep.dstStableDecimals)} ${prep.stableKey.toUpperCase()}`])
-    if (!prep.feeAmount.isZero()) rows.push(['protocol fee', `${loadConfig().feeBps} bps`])
-    if (!prep.maxRelayFee.isZero())
-        rows.push(['relay fee cap', `${ethers.utils.formatUnits(prep.maxRelayFee, prep.dstStableDecimals)} ${prep.stableKey.toUpperCase()}`])
+    rows.push(['arrives', `~${ethers.formatUnits(prep.dstReceived, prep.dstStableDecimals)} ${prep.stableKey.toUpperCase()}`])
+    if (prep.feeAmount !== 0n) rows.push(['protocol fee', `${loadConfig().feeBps} bps`])
+    if (prep.maxRelayFee !== 0n)
+        rows.push(['relay fee cap', `${ethers.formatUnits(prep.maxRelayFee, prep.dstStableDecimals)} ${prep.stableKey.toUpperCase()}`])
     if (opts.exactOut) {
-        rows.push(['you pay (max)', `${ethers.utils.formatUnits(prep.amountIn, prep.payDecimals)}`])
-        rows.push(['you receive', c.bold(`exactly ${ethers.utils.formatUnits(prep.minOut, outDec)} ${outSym}`)])
+        rows.push(['you pay (max)', `${ethers.formatUnits(prep.amountIn, prep.payDecimals)}`])
+        rows.push(['you receive', c.bold(`exactly ${ethers.formatUnits(prep.minOut, outDec)} ${outSym}`)])
     } else {
         rows.push([
             'expected out',
-            c.bold(`${ethers.utils.formatUnits(prep.expectedOut, outDec)} ${outSym}`) +
+            c.bold(`${ethers.formatUnits(prep.expectedOut, outDec)} ${outSym}`) +
                 (prep.dstRoute ? c.dim(` via ${prep.dstRoute.venue} (tier ${prep.dstRoute.tier})`) : ''),
         ])
-        if (!prep.minOut.isZero())
-            rows.push(['min out', `${ethers.utils.formatUnits(prep.minOut, outDec)} ${outSym} (${opts.slippageBps} bps)`])
+        if (prep.minOut !== 0n)
+            rows.push(['min out', `${ethers.formatUnits(prep.minOut, outDec)} ${outSym} (${opts.slippageBps} bps)`])
     }
     rows.push([
         'bridge fee',
-        prep.rail === 'oft' ? `${ethers.utils.formatEther(prep.lzFeeNative)} native` : 'none (standard finality ~1–15 min)',
+        prep.rail === 'oft' ? `${ethers.formatEther(prep.lzFeeNative)} native` : 'none (standard finality ~1–15 min)',
     ])
     return rows
 }
@@ -149,7 +150,7 @@ export function registerTrade(program: Command): void {
             const spin = spinner('quoting across venues…')
             let prep: Prepared
             try {
-                prep = await prepare({ ...parsed, buyer: opts.buyer ?? ethers.constants.AddressZero })
+                prep = await prepare({ ...parsed, buyer: opts.buyer ?? ethers.ZeroAddress })
             } finally {
                 spin.stop()
             }
@@ -262,7 +263,7 @@ export function registerTrade(program: Command): void {
                     const sent = await signer!.sendTransaction({ to: tx.to, data: tx.data, value: tx.value })
                     s.update(`${tx.label} — waiting for confirmation (${sent.hash.slice(0, 14)}…)`)
                     const rc = await sent.wait()
-                    lastHash = rc.transactionHash
+                    lastHash = rc!.hash
                     s.stop(`${c.green('✓')} ${tx.label}  ${c.dim(lastHash)}`)
                     if (opts.json) emitJson({ event: 'tx', label: tx.label, hash: lastHash })
                     if (tx === txs[txs.length - 1]) {

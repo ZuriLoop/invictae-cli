@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 — 2026-11-04
+
+- **ethers v6 migration**: noble-curves cryptography, zero known production advisories (`npm audit` clean); CI audit gate raised back to high severity. Byte encodings unchanged (golden-vector tests pass untouched).
+- **Smarter routing**: multi-hop scans now route through the chain's other stables as well as the wrapped native — e.g. USDT → USDC-paired tokens (tokenized stocks) now quote.
+- Same-chain requests are rejected with a clear message; bridge-quote failures report the lane instead of a raw revert dump.
+
 ## 0.3.0 — 2026-11-04
 
 - `invictae-mcp`: a dependency-free Model Context Protocol server (stdio) with read tools plus guarded `execute_swap` (explicit confirm, policy enforcement, registry-tokens-only, idempotency) and bounded `track_swap`.

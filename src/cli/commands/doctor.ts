@@ -36,7 +36,7 @@ async function checkChain(chain: Chain, human: boolean): Promise<Check[]> {
     // RPC + identity
     try {
         const net = await p.getNetwork()
-        if (net.chainId !== chain.chainId) {
+        if (Number(net.chainId) !== chain.chainId) {
             report('fail', `RPC answers chainId ${net.chainId}, config says ${chain.chainId}`)
             return checks
         }
@@ -111,7 +111,7 @@ async function checkChain(chain: Chain, human: boolean): Promise<Check[]> {
         try {
             for (const [name, bridge] of Object.entries(chain.bridges)) {
                 const mapped: string = await zap.bridgeToken(bridge.oApp)
-                if (mapped !== ethers.constants.AddressZero) report('ok', `zap allowlists ${name}`)
+                if (mapped !== ethers.ZeroAddress) report('ok', `zap allowlists ${name}`)
                 else report('fail', `zap does not allowlist ${name} (setBridge missing)`)
             }
             if (chain.cctp) {

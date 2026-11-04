@@ -50,19 +50,20 @@ interface DecodedIntent {
 
 /** Pulls rail, buyer, and destination out of the original zap calldata. */
 function decodeIntent(config: ChainsConfig, data: string): DecodedIntent | null {
-    const iface = new ethers.utils.Interface(ZAP_ABI)
-    let parsed: ethers.utils.TransactionDescription
+    const iface = new ethers.Interface(ZAP_ABI)
+    let parsed: ethers.TransactionDescription | null
     try {
         parsed = iface.parseTransaction({ data })
     } catch {
         return null
     }
+    if (!parsed) return null
     const p = parsed.args.p
     const isCctp = parsed.name.startsWith('zapCctp')
     const orderBytes: string = isCctp ? p.hookData : p.composeMsg
     let buyer: string | null = null
     try {
-        ;[buyer] = ethers.utils.defaultAbiCoder.decode(ORDER_TYPES, orderBytes)
+        ;[buyer] = ethers.AbiCoder.defaultAbiCoder().decode(ORDER_TYPES, orderBytes)
     } catch {
         // bridge-only or foreign payload — outcome matching falls back to time-window scan
     }
@@ -85,12 +86,13 @@ async function findOutcome(
     const p = provider(dstChain)
     const composer = new ethers.Contract(dstChain.composer, COMPOSER_EVENTS_ABI, p)
     const latest = await p.getBlockNumber()
-    const topicBuyer = buyer ? [ethers.utils.hexZeroPad(buyer, 32)] : null
+    const topicBuyer = buyer ? [ethers.zeroPadValue(buyer, 32)] : null
 
-    const scan = async (eventName: string): Promise<ethers.Event | undefined> => {
+    const scan = async (eventName: string): Promise<ethers.EventLog | undefined> => {
         const filter = composer.filters[eventName](topicBuyer ? buyer : null)
         const events = await composer.queryFilter(filter, Math.max(fromBlock, latest - 9000), latest)
-        return events[events.length - 1]
+        const last = events[events.length - 1]
+        return last && 'args' in last ? last : undefined
     }
 
     const executed = await scan('SwapExecuted')
@@ -152,7 +154,7 @@ export async function trackSwap(
 
     // ── source confirmation ─────────────────────────────────────────────────
     emit({ step: 'source_confirmed', state: 'active', rail: 'unknown', detail: 'waiting for the source transaction', at: Date.now() })
-    let receipt: ethers.providers.TransactionReceipt | null = null
+    let receipt: ethers.TransactionReceipt | null = null
     while (!receipt && !expired()) {
         receipt = await srcProvider.getTransactionReceipt(txHash).catch(() => null)
         if (!receipt) await sleep()

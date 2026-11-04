@@ -143,7 +143,7 @@ const TOOLS: Record<string, Tool> = {
         annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Quote a cross-chain swap (read-only). Amounts are integer strings in each token’s own decimals. Always show expectedOut/minOut and any warnings to the user before executing.',
         inputSchema: { type: 'object', properties: swapInputs, required: ['from', 'to', 'pay', 'amount', 'tokenOut'] },
-        handler: async (args) => quoteJson(await doPrepare(args, ethers.constants.AddressZero)),
+        handler: async (args) => quoteJson(await doPrepare(args, ethers.ZeroAddress)),
     },
     plan_swap: {
         title: 'Build unsigned swap transactions',
@@ -201,7 +201,7 @@ const TOOLS: Record<string, Tool> = {
             for (const tx of txs) {
                 const sent = await signer.sendTransaction({ to: tx.to, data: tx.data, value: tx.value })
                 const rc = await sent.wait()
-                hashes.push({ label: tx.label, hash: rc.transactionHash })
+                hashes.push({ label: tx.label, hash: rc!.hash })
             }
             const last = hashes[hashes.length - 1].hash
             recordSwap({
@@ -247,7 +247,7 @@ const TOOLS: Record<string, Tool> = {
         },
         handler: async (args) => {
             const chain = getChain(loadConfig(), String(args.chain))
-            const who = ethers.utils.getAddress(String(args.address))
+            const who = ethers.getAddress(String(args.address))
             const p = provider(chain)
             const out: Record<string, { amount: string; decimals: number; address?: string }> = {
                 native: { amount: (await p.getBalance(who)).toString(), decimals: 18 },
@@ -256,8 +256,9 @@ const TOOLS: Record<string, Tool> = {
             for (const [sym, addr] of entries) {
                 try {
                     const t = new ethers.Contract(addr, ERC20_ABI, p)
-                    const [bal, dec] = await Promise.all([t.balanceOf(who), t.decimals()])
-                    if (!bal.isZero()) out[sym] = { amount: bal.toString(), decimals: dec, address: addr }
+                    const [bal, decRaw] = await Promise.all([t.balanceOf(who), t.decimals()])
+                    const dec = Number(decRaw)
+                    if (bal !== 0n) out[sym] = { amount: bal.toString(), decimals: dec, address: addr }
                 } catch {
                     // unreadable token — skip
                 }
@@ -284,7 +285,7 @@ async function handle(msg: Rpc): Promise<void> {
                 reply(id, {
                     protocolVersion: (params?.protocolVersion as string) ?? '2025-06-18',
                     capabilities: { tools: {} },
-                    serverInfo: { name: 'invictae', version: '0.3.0' },
+                    serverInfo: { name: 'invictae', version: '0.4.0' },
                 })
                 return
             case 'notifications/initialized':
