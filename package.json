@@ -1,6 +1,6 @@
 {
   "name": "invictae",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Agentic cross-chain swap CLI \u2014 stables, native coins, and tokenized stocks across 12 chains, in one command.",
   "license": "MIT",
   "author": "ZuriLoop",
@@ -9,7 +9,8 @@
     "url": "https://github.com/ZuriLoop/invictae-cli.git"
   },
   "bin": {
-    "invictae": "dist/cli/index.js"
+    "invictae": "dist/cli/index.js",
+    "invictae-mcp": "dist/mcp/index.js"
   },
   "files": [
     "dist",

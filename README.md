@@ -112,7 +112,21 @@ invictae schema                                  # the whole interface, as JSON
 
 ## For agents
 
-The CLI is built to be driven by software: `--json` on every command (one object for reads, NDJSON for streams), data on stdout and narration on stderr, documented exit codes, a `schema` command that returns the full interface as JSON, and compact positional syntax — `invictae quote 100 usdc@base eth@arbitrum`. `swap` refuses to broadcast non-interactively without `--yes`, and `--dry-run` returns raw signable payloads without touching a key. See [AGENTS.md](AGENTS.md).
+**MCP server** — `invictae-mcp` ships in this package: a dependency-free Model Context Protocol server (stdio) exposing `get_quote`, `plan_swap`, `execute_swap`, `track_swap`, `get_balances`, `list_chains`, `get_route`, and `list_tokens`. Point any MCP client at it:
+
+```json
+{ "mcpServers": { "invictae": { "command": "invictae-mcp" } } }
+```
+
+`execute_swap` is deliberately hard to misuse: it requires `confirm: true` (to be set only after the user approved that exact swap), refuses CoinGecko-resolved tokens outright, honors the policy file below, supports idempotency keys, and needs `PRIVATE_KEY` in the server's environment — read tools never do.
+
+**Skill** — [SKILL.md](SKILL.md) teaches any CLI-driving agent the full workflow and its safety rules.
+
+**Policy guardrails** — drop an `invictae.policy.json` next to the process (or `~/.invictae/policy.json`, or point `INVICTAE_POLICY` at one) and both the CLI and the MCP server enforce it before building any transaction: per-swap stable cap, swaps-per-day cap, chain allowlist, registry-tokens-only, recipient allowlist. See [invictae.policy.example.json](invictae.policy.example.json). Give your agent a budget, not your keys.
+
+**Idempotency** — `swap --idempotency-key <k>` (or the MCP argument) records broadcasts in a local ledger and returns the original transaction instead of double-firing on retries.
+
+The CLI itself is built to be driven by software: `--json` on every command (one object for reads, NDJSON for streams), data on stdout and narration on stderr, documented exit codes, a `schema` command that returns the full interface as JSON, and compact positional syntax — `invictae quote 100 usdc@base eth@arbitrum`. `swap` refuses to broadcast non-interactively without `--yes`, and `--dry-run` returns raw signable payloads without touching a key. See [AGENTS.md](AGENTS.md).
 
 ## Tickers, addresses, chains
 

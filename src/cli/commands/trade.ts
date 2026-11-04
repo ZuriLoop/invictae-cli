@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 
 import { getChain, loadConfig, provider, ERC20_ABI } from '../../lib/common'
 import { buildSwapTxs, prepare, type Prepared } from '../../lib/prepare'
+import { enforcePolicy, findByKey, loadPolicy, recordSwap } from '../../lib/policy'
 import { trackSwap } from '../../lib/tracker'
 import { c, confirm, emitJson, kv, note, spinner } from '../ui'
 
@@ -169,6 +170,7 @@ export function registerTrade(program: Command): void {
         .option('--min-finality <n>', 'CCTP finality: 2000 standard, 1000 fast (cctp rail)', '2000')
         .option('--yes', 'skip the confirmation prompt (required in non-interactive sessions)', false)
         .option('--allow-unverified', 'permit swapping tokens resolved via CoinGecko instead of the curated registry or an explicit address', false)
+        .option('--idempotency-key <key>', 'refuse to broadcast twice for the same key (returns the original tx instead)')
         .option('--no-follow', 'do not stream the swap steps after broadcasting')
         .option('--json', 'emit NDJSON events on stdout: plan, tx, step, done', false)
         .option('--dry-run', 'print the wallet payloads instead of broadcasting', false)
@@ -192,6 +194,19 @@ export function registerTrade(program: Command): void {
                 prep = await prepare({ ...parsed, buyer })
             } finally {
                 spin.stop()
+            }
+            if (opts.idempotencyKey) {
+                const prior = findByKey(opts.idempotencyKey)
+                if (prior) {
+                    if (opts.json) emitJson({ event: 'duplicate', idempotencyKey: opts.idempotencyKey, txHash: prior.txHash, at: prior.at })
+                    else note(`idempotency key already used — original tx ${prior.txHash}; nothing sent`)
+                    return
+                }
+            }
+            const loaded = loadPolicy()
+            if (loaded && !opts.dryRun) {
+                enforcePolicy(loaded.policy, prep, buyer)
+                if (!opts.json) note(`policy ok (${loaded.source})`)
             }
             if ((prep.payVia === 'coingecko' || prep.outVia === 'coingecko') && !opts.allowUnverified && !opts.dryRun) {
                 const which = prep.payVia === 'coingecko' ? prep.payToken : prep.tokenOutResolved
@@ -237,6 +252,9 @@ export function registerTrade(program: Command): void {
                     lastHash = rc.transactionHash
                     s.stop(`${c.green('✓')} ${tx.label}  ${c.dim(lastHash)}`)
                     if (opts.json) emitJson({ event: 'tx', label: tx.label, hash: lastHash })
+                    if (tx === txs[txs.length - 1]) {
+                        recordSwap({ at: Date.now(), txHash: lastHash, route: `${parsed.amount} ${parsed.pay}@${prep.srcChain.name} -> ${parsed.tokenOut}@${prep.dstChain.name}`, key: opts.idempotencyKey })
+                    }
                 } catch (err) {
                     s.stop(`${c.red('✗')} ${tx.label} failed: ${(err as Error).message}`)
                     if (opts.json) emitJson({ event: 'error', label: tx.label, message: (err as Error).message })

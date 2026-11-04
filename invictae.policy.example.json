@@ -1,0 +1,7 @@
+{
+  "maxStablePerSwap": "1000",
+  "maxSwapsPerDay": 20,
+  "allowedChains": ["base", "arbitrum", "optimism", "ethereum"],
+  "registryTokensOnly": true,
+  "allowedRecipients": ["0xYourTreasuryAddress"]
+}

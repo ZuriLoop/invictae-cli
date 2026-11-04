@@ -113,3 +113,44 @@ test('registry addresses are well-formed and chains exist', () => {
         }
     }
 })
+
+// ── policy ───────────────────────────────────────────────────────────────────
+
+test('policy enforcement blocks each violation with a precise reason', async () => {
+    const { enforcePolicy } = await import('../dist/lib/policy.js')
+    const { BigNumber } = (await import('ethers')).default ?? (await import('ethers'))
+    const prep = {
+        srcChain: { name: 'base' },
+        dstChain: { name: 'bnb' },
+        payVia: 'stable',
+        outVia: 'coingecko',
+        stableKey: 'usdc',
+        dstStableDecimals: 6,
+        dstReceived: BigNumber.from('2000000000'), // 2000 USDC
+    }
+    assert.throws(() => enforcePolicy({ allowedChains: ['base'] }, prep, '0x1111111111111111111111111111111111111111'), /chain 'bnb'/)
+    assert.throws(() => enforcePolicy({ registryTokensOnly: true }, prep, '0x1111111111111111111111111111111111111111'), /token out resolved via 'coingecko'/)
+    assert.throws(() => enforcePolicy({ maxStablePerSwap: '1000' }, prep, '0x1111111111111111111111111111111111111111'), /above maxStablePerSwap/)
+    assert.throws(
+        () => enforcePolicy({ allowedRecipients: ['0x2222222222222222222222222222222222222222'] }, prep, '0x1111111111111111111111111111111111111111'),
+        /not in allowedRecipients/
+    )
+    // a compliant swap passes
+    enforcePolicy(
+        { allowedChains: ['base', 'bnb'], maxStablePerSwap: '5000' },
+        { ...prep, outVia: 'registry' },
+        '0x1111111111111111111111111111111111111111'
+    )
+})
+
+test('idempotency ledger round-trips keys', async () => {
+    const path = await import('node:path')
+    const fs = await import('node:fs')
+    process.env.INVICTAE_LEDGER = path.resolve('test', `.tmp-ledger-${Date.now()}.json`)
+    const { findByKey, recordSwap } = await import('../dist/lib/policy.js')
+    assert.equal(findByKey('k1'), undefined)
+    recordSwap({ at: Date.now(), txHash: '0xabc', route: 'test', key: 'k1' })
+    assert.equal(findByKey('k1').txHash, '0xabc')
+    fs.rmSync(process.env.INVICTAE_LEDGER, { force: true })
+    delete process.env.INVICTAE_LEDGER
+})
