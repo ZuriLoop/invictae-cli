@@ -54,5 +54,6 @@
   "homepage": "https://github.com/ZuriLoop/invictae-cli#readme",
   "bugs": {
     "url": "https://github.com/ZuriLoop/invictae-cli/issues"
-  }
+  },
+  "mcpName": "io.github.zuriloop/invictae"
 }

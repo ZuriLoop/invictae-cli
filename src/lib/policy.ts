@@ -6,6 +6,7 @@
  * Policy file locations (first found wins):
  *   $INVICTAE_POLICY  ·  ./invictae.policy.json  ·  ~/.invictae/policy.json
  */
+import crypto from 'crypto'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -17,6 +18,9 @@ import type { Prepared } from './prepare'
 export interface Policy {
     /** cap on the bridged stable per swap, in human units (e.g. "1000" = 1000 USDC/USDT) */
     maxStablePerSwap?: string
+    /** swaps above this stable amount require a human at an interactive terminal
+     *  (they cannot be --yes'd or executed through the MCP server) */
+    escalateAbove?: string
     /** cap on broadcast swaps per rolling 24h (counted from the local ledger) */
     maxSwapsPerDay?: number
     /** chain names the policy allows as source or destination */
@@ -49,8 +53,8 @@ export function loadPolicy(): { policy: Policy; source: string } | null {
     return { policy: JSON.parse(fs.readFileSync(p, 'utf8')) as Policy, source: p }
 }
 
-/** Throws with a precise reason when the prepared swap violates the policy. */
-export function enforcePolicy(policy: Policy, prep: Prepared, buyer: string): void {
+/** Throws on violation; returns 'escalate' when the swap needs interactive human approval. */
+export function enforcePolicy(policy: Policy, prep: Prepared, buyer: string): 'ok' | 'escalate' {
     if (policy.allowedChains) {
         const allowed = policy.allowedChains.map((c) => c.toLowerCase())
         for (const chain of [prep.srcChain.name, prep.dstChain.name]) {
@@ -85,6 +89,11 @@ export function enforcePolicy(policy: Policy, prep: Prepared, buyer: string): vo
             throw new Error(`policy: maxSwapsPerDay (${policy.maxSwapsPerDay}) reached — ${recent.length} swaps in the last 24h`)
         }
     }
+    if (policy.escalateAbove) {
+        const bar = ethers.utils.parseUnits(policy.escalateAbove, prep.dstStableDecimals)
+        if (prep.dstReceived.gt(bar)) return 'escalate'
+    }
+    return 'ok'
 }
 
 // ── idempotency / local swap ledger ──────────────────────────────────────────
@@ -94,6 +103,10 @@ export interface LedgerEntry {
     txHash: string
     route: string
     key?: string
+    /** sha256 over the previous entry's hash + this entry's fields: a
+     *  tamper-evident chain — editing history breaks every later hash */
+    hash?: string
+    prevHash?: string
 }
 
 function ledgerPath(): string {
@@ -117,8 +130,30 @@ export function recordSwap(entry: LedgerEntry): void {
     const file = ledgerPath()
     fs.mkdirSync(path.dirname(file), { recursive: true })
     const ledger = readLedger()
+    const prevHash = ledger.entries[ledger.entries.length - 1]?.hash ?? 'genesis'
+    entry.prevHash = prevHash
+    entry.hash = crypto
+        .createHash('sha256')
+        .update(prevHash + JSON.stringify({ at: entry.at, txHash: entry.txHash, route: entry.route, key: entry.key }))
+        .digest('hex')
     ledger.entries.push(entry)
     // keep the ledger bounded
     if (ledger.entries.length > 5000) ledger.entries = ledger.entries.slice(-5000)
     fs.writeFileSync(file, JSON.stringify(ledger))
+}
+
+/** Walks the hash chain; returns the index of the first tampered entry, or -1. */
+export function verifyLedger(): number {
+    const { entries } = readLedger()
+    let prev = 'genesis'
+    for (let i = 0; i < entries.length; i++) {
+        const e = entries[i]
+        const expect = crypto
+            .createHash('sha256')
+            .update(prev + JSON.stringify({ at: e.at, txHash: e.txHash, route: e.route, key: e.key }))
+            .digest('hex')
+        if (e.hash !== expect || e.prevHash !== prev) return i
+        prev = e.hash
+    }
+    return -1
 }

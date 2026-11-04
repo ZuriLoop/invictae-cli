@@ -81,13 +81,17 @@ async function doPrepare(args: Record<string, unknown>, buyer: string): Promise<
 }
 
 interface Tool {
+    title: string
     description: string
+    annotations: { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint?: boolean; openWorldHint?: boolean }
     inputSchema: { type: 'object'; properties: Record<string, unknown>; required?: string[] }
     handler: (args: Record<string, unknown>) => Promise<unknown>
 }
 
 const TOOLS: Record<string, Tool> = {
     list_chains: {
+        title: 'List supported chains',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Supported chains with their stables, rails, venues, and deployment state.',
         inputSchema: { type: 'object', properties: {} },
         handler: async () =>
@@ -101,6 +105,8 @@ const TOOLS: Record<string, Tool> = {
             })),
     },
     get_route: {
+        title: 'Get the rail between two chains',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Which rail connects two chains for each stable, and the destination venues.',
         inputSchema: { type: 'object', properties: { from: swapInputs.from, to: swapInputs.to }, required: ['from', 'to'] },
         handler: async (args) => {
@@ -123,6 +129,8 @@ const TOOLS: Record<string, Tool> = {
         },
     },
     list_tokens: {
+        title: 'List verified token registry',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Curated ticker registry per chain (every address verified on-chain).',
         inputSchema: { type: 'object', properties: { chain: { type: 'string', description: 'optional chain filter' } } },
         handler: async (args) => {
@@ -131,11 +139,15 @@ const TOOLS: Record<string, Tool> = {
         },
     },
     get_quote: {
+        title: 'Quote a cross-chain swap',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Quote a cross-chain swap (read-only). Amounts are integer strings in each token’s own decimals. Always show expectedOut/minOut and any warnings to the user before executing.',
         inputSchema: { type: 'object', properties: swapInputs, required: ['from', 'to', 'pay', 'amount', 'tokenOut'] },
         handler: async (args) => quoteJson(await doPrepare(args, ethers.constants.AddressZero)),
     },
     plan_swap: {
+        title: 'Build unsigned swap transactions',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Build the exact unsigned transactions for a swap (nothing is signed or sent). Use to inspect or to sign elsewhere.',
         inputSchema: {
             type: 'object',
@@ -148,6 +160,8 @@ const TOOLS: Record<string, Tool> = {
         },
     },
     execute_swap: {
+        title: 'Execute a cross-chain swap',
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
         description:
             'Broadcast a cross-chain swap and follow it briefly. REQUIRES: PRIVATE_KEY in the server environment, confirm=true (set it only after the user approved this exact swap), and it obeys the local policy file. Returns the broadcast tx; use track_swap for the final outcome.',
         inputSchema: {
@@ -176,7 +190,11 @@ const TOOLS: Record<string, Tool> = {
                 throw new Error('refusing to execute with a CoinGecko-resolved token — use an explicit address the user confirmed')
             }
             const loaded = loadPolicy()
-            if (loaded) enforcePolicy(loaded.policy, prep, buyer)
+            if (loaded && enforcePolicy(loaded.policy, prep, buyer) === 'escalate') {
+                throw new Error(
+                    `escalation_required: this swap exceeds the policy's escalateAbove threshold (${loaded.policy.escalateAbove} ${prep.stableKey.toUpperCase()}) and must be approved by a human at an interactive terminal. Ask the user to run: invictae swap ${args.amount} ${args.pay}@${prep.srcChain.name} ${args.tokenOut}@${prep.dstChain.name}`
+                )
+            }
 
             const txs = buildSwapTxs(prep)
             const hashes: { label: string; hash: string }[] = []
@@ -196,6 +214,8 @@ const TOOLS: Record<string, Tool> = {
         },
     },
     track_swap: {
+        title: 'Track a swap lifecycle',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Follow a swap for up to timeoutSec (default 120) and return the lifecycle events observed so far; call again to keep following.',
         inputSchema: {
             type: 'object',
@@ -217,6 +237,8 @@ const TOOLS: Record<string, Tool> = {
         },
     },
     get_balances: {
+        title: 'Get balances for an address',
+        annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
         description: 'Native, stable, and registry-token balances for an address on a chain.',
         inputSchema: {
             type: 'object',
@@ -273,7 +295,13 @@ async function handle(msg: Rpc): Promise<void> {
                 return
             case 'tools/list':
                 reply(id, {
-                    tools: Object.entries(TOOLS).map(([name, t]) => ({ name, description: t.description, inputSchema: t.inputSchema })),
+                    tools: Object.entries(TOOLS).map(([name, t]) => ({
+                        name,
+                        title: t.title,
+                        description: t.description,
+                        annotations: t.annotations,
+                        inputSchema: t.inputSchema,
+                    })),
                 })
                 return
             case 'tools/call': {

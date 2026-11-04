@@ -155,6 +155,10 @@ Details for security researchers, including how to report privately, live in [SE
 | `SourceZap is not deployed on <chain> yet` | The protocol contracts aren't live on that chain yet; quoting works, swapping doesn't. |
 | Quote looks stale/slow | Set a dedicated `RPC_URL_*` in `.env`; the public fallbacks are rate-limited. |
 
+## Privacy policy
+
+The CLI and MCP server collect nothing. No telemetry, no analytics, no accounts. Network calls go only to: the chain RPC endpoints you configure (or the public fallbacks in `config/chains.json`), the bridge status APIs needed by `watch`/`status`, and CoinGecko only when you ask to resolve a ticker that is not in the local registry. Your private key is read from your environment, used to sign locally, and never transmitted or logged. The swap ledger (`~/.invictae/ledger.json`) stays on your machine.
+
 ## Contributing & security
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). `npm test` runs an offline unit suite with golden byte vectors; `invictae doctor` verifies config changes against the live chains. Vulnerabilities: see [SECURITY.md](SECURITY.md) (private reporting, please).

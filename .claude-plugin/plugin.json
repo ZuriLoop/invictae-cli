@@ -1,0 +1,19 @@
+{
+  "name": "invictae",
+  "version": "0.3.0",
+  "description": "Cross-chain swaps for agents: skill + MCP server with policy guardrails.",
+  "author": {
+    "name": "ZuriLoop"
+  },
+  "mcpServers": {
+    "invictae": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "-p",
+        "invictae",
+        "invictae-mcp"
+      ]
+    }
+  }
+}

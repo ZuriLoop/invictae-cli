@@ -1,0 +1,52 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.zuriloop/invictae",
+  "description": "Cross-chain swaps for agents: quote, plan, execute (confirm-gated, policy-guarded), and track across 12 chains. Stables, native coins, tokenized stocks.",
+  "repository": {
+    "url": "https://github.com/ZuriLoop/invictae-cli",
+    "source": "github"
+  },
+  "version": "0.3.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "invictae",
+      "version": "0.3.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "npx",
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y",
+          "isRequired": true
+        },
+        {
+          "type": "positional",
+          "value": "-p",
+          "isRequired": true
+        },
+        {
+          "type": "positional",
+          "value": "invictae",
+          "isRequired": true
+        },
+        {
+          "type": "positional",
+          "value": "invictae-mcp",
+          "isRequired": true
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "PRIVATE_KEY",
+          "description": "Signing key \u2014 only needed for execute_swap; read tools never use it",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

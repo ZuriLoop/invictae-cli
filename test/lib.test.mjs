@@ -154,3 +154,36 @@ test('idempotency ledger round-trips keys', async () => {
     fs.rmSync(process.env.INVICTAE_LEDGER, { force: true })
     delete process.env.INVICTAE_LEDGER
 })
+
+test('policy escalateAbove returns escalate instead of throwing', async () => {
+    const { enforcePolicy } = await import('../dist/lib/policy.js')
+    const { BigNumber } = (await import('ethers')).default ?? (await import('ethers'))
+    const prep = {
+        srcChain: { name: 'base' },
+        dstChain: { name: 'arbitrum' },
+        payVia: 'stable',
+        outVia: 'registry',
+        stableKey: 'usdc',
+        dstStableDecimals: 6,
+        dstReceived: BigNumber.from('500000000'), // 500 USDC
+    }
+    assert.equal(enforcePolicy({ escalateAbove: '100' }, prep, '0x1111111111111111111111111111111111111111'), 'escalate')
+    assert.equal(enforcePolicy({ escalateAbove: '1000' }, prep, '0x1111111111111111111111111111111111111111'), 'ok')
+})
+
+test('ledger hash chain detects tampering', async () => {
+    const path = await import('node:path')
+    const fs = await import('node:fs')
+    process.env.INVICTAE_LEDGER = path.resolve('test', `.tmp-ledger-${Date.now()}-chain.json`)
+    const { recordSwap, verifyLedger } = await import('../dist/lib/policy.js')
+    recordSwap({ at: 1, txHash: '0x01', route: 'a' })
+    recordSwap({ at: 2, txHash: '0x02', route: 'b' })
+    recordSwap({ at: 3, txHash: '0x03', route: 'c' })
+    assert.equal(verifyLedger(), -1) // intact
+    const ledger = JSON.parse(fs.readFileSync(process.env.INVICTAE_LEDGER, 'utf8'))
+    ledger.entries[1].txHash = '0xEVIL'
+    fs.writeFileSync(process.env.INVICTAE_LEDGER, JSON.stringify(ledger))
+    assert.equal(verifyLedger(), 1) // tamper detected at index 1
+    fs.rmSync(process.env.INVICTAE_LEDGER, { force: true })
+    delete process.env.INVICTAE_LEDGER
+})

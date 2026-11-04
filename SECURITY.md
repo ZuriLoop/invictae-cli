@@ -2,6 +2,17 @@
 
 This CLI signs transactions with a locally held key. Bugs that could lead to loss of funds — wrong addresses, broken slippage math, payload-encoding errors, ticker-resolution confusion — are security issues even when they look like UX.
 
+## Threat model (what is enforced where)
+
+| Threat | Enforcement |
+| --- | --- |
+| Agent tricked into swapping to an attacker's token | Curated on-chain-verified registry; CoinGecko fallback re-verified against `symbol()` and refused by `swap`/MCP without explicit override |
+| Agent exceeds its mandate | Policy file enforced **in code, outside the model** (per-swap cap, daily cap, chains, token tiers, recipients); amounts above `escalateAbove` require a human at an interactive terminal — the MCP server cannot approve them |
+| Retry storms double-spending | Idempotency keys; the local ledger is hash-chained (tamper-evident; `verifyLedger`) |
+| Malicious dependency | 3 runtime deps, exact-pinned, lockfile, `npm ci`, no postinstall scripts, no bridge SDK (encodings in-repo with golden-vector tests) |
+| Key exposure | Key never leaves the environment; never required for reads; MCP read tools function without it |
+| Funds stuck mid-route | Contract-enforced refunds/escrow on the destination; `refunds --claim` is permissionless |
+
 ## Reporting
 
 Please use GitHub's private vulnerability reporting on this repository ("Security" → "Report a vulnerability"). Do not open public issues for anything that could put user funds at risk. We aim to acknowledge reports within 72 hours.

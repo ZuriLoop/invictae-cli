@@ -205,8 +205,21 @@ export function registerTrade(program: Command): void {
             }
             const loaded = loadPolicy()
             if (loaded && !opts.dryRun) {
-                enforcePolicy(loaded.policy, prep, buyer)
-                if (!opts.json) note(`policy ok (${loaded.source})`)
+                const verdict = enforcePolicy(loaded.policy, prep, buyer)
+                if (verdict === 'escalate') {
+                    if (!process.stdin.isTTY || opts.json) {
+                        throw new Error(
+                            `policy: this swap exceeds escalateAbove (${loaded.policy.escalateAbove} ${prep.stableKey.toUpperCase()}) and needs a human at an interactive terminal — run the same command there`
+                        )
+                    }
+                    const approve = await confirm(
+                        `${c.yellow('policy escalation:')} this swap moves more than ${loaded.policy.escalateAbove} ${prep.stableKey.toUpperCase()}. Approve it explicitly?`
+                    )
+                    if (!approve) {
+                        note('escalation declined — nothing sent')
+                        return
+                    }
+                } else if (!opts.json) note(`policy ok (${loaded.source})`)
             }
             if ((prep.payVia === 'coingecko' || prep.outVia === 'coingecko') && !opts.allowUnverified && !opts.dryRun) {
                 const which = prep.payVia === 'coingecko' ? prep.payToken : prep.tokenOutResolved
