@@ -13,5 +13,6 @@ jobs:
           node-version: 20
       - run: npm ci || npm install
       - run: npm run typecheck
-      - run: npm run build
+      - run: npm test
       - run: node dist/cli/index.js chains
+      - run: node dist/cli/index.js schema > /dev/null

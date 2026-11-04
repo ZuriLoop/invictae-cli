@@ -1,6 +1,6 @@
 {
   "name": "invictae",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cross-chain swap CLI \u2014 stables, native coins, blue chips, and tokenized stocks across 12 chains",
   "license": "MIT",
   "author": "ZuriLoop",
@@ -21,7 +21,9 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "dev": "ts-node src/cli",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "node --test",
+    "pretest": "npm run build"
   },
   "engines": {
     "node": ">=20"
@@ -35,5 +37,21 @@
     "@types/node": "~18.18.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.4"
+  },
+  "keywords": [
+    "cross-chain",
+    "swap",
+    "bridge",
+    "defi",
+    "cli",
+    "usdc",
+    "usdt",
+    "cctp",
+    "tokenized-stocks",
+    "agents"
+  ],
+  "homepage": "https://github.com/ZuriLoop/invictae-cli#readme",
+  "bugs": {
+    "url": "https://github.com/ZuriLoop/invictae-cli/issues"
   }
 }

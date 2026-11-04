@@ -1,5 +1,7 @@
 # invictae
 
+[![CI](https://github.com/ZuriLoop/invictae-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ZuriLoop/invictae-cli/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
+
 Cross-chain swap CLI: pay with what you hold on one chain, receive what you want on another — stablecoins, native coins, blue chips, and tokenized U.S. stocks — in one approval, with no solvers and no off-chain fill trust.
 
 ```
@@ -72,5 +74,20 @@ Ethereum, BNB Chain, Base, Arbitrum, Optimism, HyperEVM, Polygon, Avalanche, Uni
 - The order carries the user's slippage floor and deadline; the destination contract enforces them.
 - Any failure after funds land refunds the stablecoin to the buyer on the destination chain, escrowed claimably (`invictae refunds --claim`) if the token rejects the transfer.
 - Quotes scan every venue × fee tier (including two-hop routes through the wrapped native) and route to the best fill; the chosen venue is pinned in the signed order.
+
+## Troubleshooting
+
+| Symptom | Meaning / fix |
+| --- | --- |
+| `no venue on <chain> quotes X -> Y (no pools?)` | The out token has no reachable pool on that chain. Try another destination chain or check `invictae venues --chain <chain>`. |
+| `non-interactive session: pass --yes to broadcast` | You ran `swap` from a script/agent. Add `--yes` (or `--dry-run` to inspect without signing). |
+| `PRIVATE_KEY missing` | Signing commands read the key from the environment (`.env` works). Read-only commands never need it. |
+| `… resolved via CoinGecko — verify this address` | The ticker wasn't in the curated registry. Confirm the printed address is the token you mean, or pass the address directly. |
+| `SourceZap is not deployed on <chain> yet` | The protocol contracts aren't live on that chain yet; quoting works, swapping doesn't. |
+| Quote looks stale/slow | Set a dedicated `RPC_URL_*` in `.env`; the public fallbacks are rate-limited. |
+
+## Contributing & security
+
+PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). `npm test` runs an offline unit suite with golden byte vectors; `invictae doctor` verifies config changes against the live chains. Vulnerabilities: see [SECURITY.md](SECURITY.md) (private reporting, please).
 
 This CLI is MIT-licensed; use it, fork it, or wire its `lib/` (quote preparation, transaction building, lifecycle tracker) into your own tooling.

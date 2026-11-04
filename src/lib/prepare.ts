@@ -115,6 +115,9 @@ export async function prepare(opts: {
     let expectedOut: ethers.BigNumber
     let minOut = ethers.constants.Zero
 
+    if (!/^\d+(\.\d+)?$/.test(opts.amount)) {
+        throw new Error(`invalid amount '${opts.amount}' — use a plain decimal number like 100 or 0.5`)
+    }
     if (opts.exactOut) {
         if (bridgeOnly) throw new Error('--exact-out does not apply to bridge-only transfers')
         // Work backwards: desired output -> stable needed on dst -> gross bridge
