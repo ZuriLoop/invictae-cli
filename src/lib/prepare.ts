@@ -12,7 +12,7 @@ import {
     loadConfig,
     pickBridge,
     provider,
-    resolveToken,
+    resolveTokenAny,
     ERC20_ABI,
     OFT_ABI,
     ZAP_ABI,
@@ -29,6 +29,10 @@ export interface Prepared {
     bridgeSrc: string
     payToken: string
     payNative: boolean
+    payVia: string
+    payName?: string
+    outVia: string
+    outName?: string
     payDecimals: number
     amountIn: ethers.BigNumber
     srcRoute: BestRoute | null // null when paying with the bridge stable
@@ -68,7 +72,7 @@ export async function prepare(opts: {
     const dstChain = getChain(config, opts.to)
 
     // Pay token: 'eth'/'native', a registry symbol, 'usdt'/'usdc', or an address
-    const payRes = resolveToken(srcChain, opts.pay)
+    const payRes = await resolveTokenAny(srcChain, opts.pay)
     const payToken = payRes.address
     const payLower = opts.pay.toLowerCase()
 
@@ -88,7 +92,7 @@ export async function prepare(opts: {
     const payDecimals: number = await payErc20.decimals()
 
     // Token out: 'eth'/'native' (delivered unwrapped), a registry symbol, or an address
-    const outRes = resolveToken(dstChain, opts.tokenOut)
+    const outRes = await resolveTokenAny(dstChain, opts.tokenOut)
     const tokenOutResolved = outRes.address
     const tokenOut = outRes.native ? ethers.constants.AddressZero : tokenOutResolved
     const bridgeOnly = !outRes.native && tokenOutResolved.toLowerCase() === dstStable.toLowerCase()
@@ -200,7 +204,8 @@ export async function prepare(opts: {
     return {
         srcChain, dstChain, stableKey, rail,
         bridgeSrc: rail === 'oft' ? bridge!.src.oApp : srcChain.cctp!.tokenMessengerV2,
-        payToken, payNative: payRes.native, payDecimals, amountIn,
+        payToken, payNative: payRes.native, payVia: payRes.via, payName: payRes.name,
+        outVia: outRes.via, outName: outRes.name, payDecimals, amountIn,
         srcRoute, minBridgeAmount, bridgeReceived, dstReceived, dstStableDecimals: dstDec, feeAmount, maxRelayFee,
         dstRoute, tokenOut, tokenOutResolved, expectedOut, minOut, deadline, order,
         lzFeeNative, extraOptions,

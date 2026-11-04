@@ -37,6 +37,8 @@ export interface Chain {
     publicRpc: string
     lzEndpoint: string
     wrappedNative: string | null
+    /** CoinGecko asset-platform id for dynamic ticker resolution (null = registry/address only) */
+    coingeckoPlatform?: string | null
     stables: Record<string, string>
     bridges: Record<string, BridgeConfig>
     venues: Record<string, Venue>
@@ -64,35 +66,101 @@ export function loadTokens(): Record<string, Record<string, string>> {
     }
 }
 
-/** Resolves 'eth'/'native', a registry symbol, or a raw address on `chain`. */
-export function resolveToken(chain: Chain, nameOrAddress: string): { address: string; native: boolean } {
+export interface TokenResolution {
+    address: string
+    native: boolean
+    /** how the input resolved — 'coingecko' means re-verified on-chain but worth showing the user */
+    via: 'native' | 'wrapped' | 'stable' | 'registry' | 'address' | 'coingecko'
+    name?: string
+}
+
+/** Resolves 'eth'/'native', a wrapped-native symbol, a registry symbol, or a raw address on `chain`. */
+export function resolveToken(chain: Chain, nameOrAddress: string): TokenResolution {
     const lower = nameOrAddress.toLowerCase()
     if (lower === 'eth' || lower === 'native') {
         if (!chain.wrappedNative) throw new Error(`${chain.name} has no wrapped native configured`)
-        return { address: chain.wrappedNative, native: true }
+        return { address: chain.wrappedNative, native: true, via: 'native' }
     }
     // wrapped-native symbols resolve to the wrapped ERC-20 (not unwrapped delivery)
     if (['weth', 'wbnb', 'wpol', 'wmatic', 'wavax', 'whype', 'wsei', 'wmnt'].includes(lower)) {
         if (!chain.wrappedNative) throw new Error(`${chain.name} has no wrapped native configured`)
-        return { address: chain.wrappedNative, native: false }
+        return { address: chain.wrappedNative, native: false, via: 'wrapped' }
     }
-    if (chain.stables[lower]) return { address: chain.stables[lower], native: false }
+    if (chain.stables[lower]) return { address: chain.stables[lower], native: false, via: 'stable' }
     const registry = loadTokens()[chain.name]
     const hit = registry && Object.entries(registry).find(([sym]) => sym.toLowerCase() === lower)
-    if (hit) return { address: hit[1], native: false }
+    if (hit) return { address: hit[1], native: false, via: 'registry' }
     if (!/^0x[0-9a-fA-F]{40}$/.test(nameOrAddress)) {
         const known = [...Object.keys(chain.stables), ...Object.keys(registry ?? {})].join(', ')
         throw new Error(
             `unknown token '${nameOrAddress}' on ${chain.name} — use 'eth'/'native', a registry symbol (${known || 'none registered'}), or an ERC-20 address`
         )
     }
-    return { address: ethers.utils.getAddress(nameOrAddress), native: false }
+    return { address: ethers.utils.getAddress(nameOrAddress), native: false, via: 'address' }
 }
 
-export function getChain(config: ChainsConfig, name: string): Chain {
-    const chain = config.chains.find((c) => c.name.toLowerCase() === name.toLowerCase())
+/**
+ * resolveToken plus a live CoinGecko fallback for unknown tickers. A CoinGecko
+ * hit is never trusted blindly: the address must exist on this chain and its
+ * on-chain symbol() must match the requested ticker (case-insensitive), or we
+ * refuse and ask for an explicit address. Callers should surface via/name so
+ * the user sees what the ticker resolved to before signing anything.
+ */
+export async function resolveTokenAny(chain: Chain, nameOrAddress: string): Promise<TokenResolution> {
+    try {
+        return resolveToken(chain, nameOrAddress)
+    } catch (err) {
+        if (!chain.coingeckoPlatform || /^0x/.test(nameOrAddress)) throw err
+    }
+    const ticker = nameOrAddress.toLowerCase()
+    const search = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(ticker)}`)
+    if (!search.ok) throw new Error(`ticker lookup failed (CoinGecko ${search.status}) — pass the ERC-20 address instead`)
+    const { coins } = (await search.json()) as { coins?: { id: string; symbol: string; name: string }[] }
+    const coin = (coins ?? []).find((c) => c.symbol.toLowerCase() === ticker)
+    if (!coin) throw new Error(`unknown ticker '${nameOrAddress}' — pass the ERC-20 address instead`)
+    const detail = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false`
+    )
+    if (!detail.ok) throw new Error(`ticker lookup failed (CoinGecko ${detail.status}) — pass the ERC-20 address instead`)
+    const d = (await detail.json()) as { platforms?: Record<string, string> }
+    const address = d.platforms?.[chain.coingeckoPlatform!]
+    if (!address) throw new Error(`'${coin.name}' has no ${chain.name} deployment per CoinGecko — pass the ERC-20 address if one exists`)
+    const checksummed = ethers.utils.getAddress(address)
+    const onchain: string = await new ethers.Contract(checksummed, ERC20_ABI, provider(chain)).symbol().catch(() => '')
+    if (onchain.toLowerCase() !== ticker) {
+        throw new Error(
+            `refusing '${nameOrAddress}': CoinGecko resolved it to ${checksummed} but that contract's symbol() is '${onchain || '?'}' — pass the address explicitly`
+        )
+    }
+    return { address: checksummed, native: false, via: 'coingecko', name: coin.name }
+}
+
+const CHAIN_ALIASES: Record<string, string> = {
+    eth: 'ethereum', mainnet: 'ethereum',
+    bsc: 'bnb', binance: 'bnb', 'bnb-chain': 'bnb',
+    arb: 'arbitrum', 'arbitrum-one': 'arbitrum',
+    op: 'optimism',
+    matic: 'polygon', pol: 'polygon',
+    avax: 'avalanche',
+    hype: 'hyperevm', hyperliquid: 'hyperevm',
+    uni: 'unichain',
+}
+
+/** Accepts a chain name, a common alias, a numeric chainId, or a LayerZero EID. */
+export function getChain(config: ChainsConfig, nameOrId: string | number): Chain {
+    const q = String(nameOrId).trim().toLowerCase()
+    if (/^\d+$/.test(q)) {
+        const n = parseInt(q)
+        const byId = config.chains.find((c) => c.chainId === n || c.lzEid === n)
+        if (byId) return byId
+        throw new Error(
+            `Unknown chain id '${q}'. Known: ${config.chains.map((c) => `${c.name} (${c.chainId})`).join(', ')}`
+        )
+    }
+    const resolved = CHAIN_ALIASES[q] ?? q
+    const chain = config.chains.find((c) => c.name.toLowerCase() === resolved)
     if (!chain) {
-        throw new Error(`Unknown chain '${name}'. Known: ${config.chains.map((c) => c.name).join(', ')}`)
+        throw new Error(`Unknown chain '${nameOrId}'. Known: ${config.chains.map((c) => c.name).join(', ')}`)
     }
     return chain
 }

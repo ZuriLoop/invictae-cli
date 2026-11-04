@@ -43,6 +43,14 @@ async function describe(prep: Prepared, opts: Record<string, string>): Promise<[
     const outSym = prep.tokenOut === ethers.constants.AddressZero ? `${outSymRaw} → native` : outSymRaw
     const rows: [string, string][] = []
     rows.push(['route', `${prep.srcChain.name} → ${prep.dstChain.name}`])
+    if (prep.payVia === 'coingecko') {
+        rows.push(['pay token', `${prep.payToken} ${c.yellow(`← '${opts.pay}' resolved via CoinGecko (${prep.payName}) — verify this address`)}`])
+    }
+    rows.push([
+        'token out',
+        `${prep.tokenOut === ethers.constants.AddressZero ? `native (unwraps ${prep.tokenOutResolved})` : prep.tokenOutResolved}` +
+            (prep.outVia === 'coingecko' ? ` ${c.yellow(`← '${opts.tokenOut}' resolved via CoinGecko (${prep.outName}) — verify this address`)}` : ''),
+    ])
     rows.push([
         'rail',
         prep.rail === 'cctp' ? c.cyan('CCTP v2 — lossless, relayer completes') : c.cyan(`LayerZero OFT (${prep.bridgeSrc.slice(0, 10)}…)`),

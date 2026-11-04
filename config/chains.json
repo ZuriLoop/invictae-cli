@@ -47,7 +47,8 @@
         "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
         "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
       },
-      "wrappedNative": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      "wrappedNative": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "coingeckoPlatform": "ethereum"
     },
     {
       "name": "bnb",
@@ -97,7 +98,8 @@
       },
       "composer": null,
       "zap": null,
-      "wrappedNative": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+      "wrappedNative": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+      "coingeckoPlatform": "binance-smart-chain"
     },
     {
       "name": "base",
@@ -164,7 +166,8 @@
         "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
         "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
       },
-      "wrappedNative": "0x4200000000000000000000000000000000000006"
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "coingeckoPlatform": "base"
     },
     {
       "name": "arbitrum",
@@ -212,7 +215,8 @@
         "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
         "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
       },
-      "wrappedNative": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+      "wrappedNative": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "coingeckoPlatform": "arbitrum-one"
     },
     {
       "name": "hyperevm",
@@ -260,7 +264,8 @@
       "notes": "USDT lane only (no Stargate). Own LayerZero endpoint address.",
       "composer": null,
       "zap": null,
-      "wrappedNative": "0x5555555555555555555555555555555555555555"
+      "wrappedNative": "0x5555555555555555555555555555555555555555",
+      "coingeckoPlatform": "hyperevm"
     },
     {
       "name": "optimism",
@@ -332,7 +337,8 @@
         "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
         "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
       },
-      "wrappedNative": "0x4200000000000000000000000000000000000006"
+      "wrappedNative": "0x4200000000000000000000000000000000000006",
+      "coingeckoPlatform": "optimistic-ethereum"
     },
     {
       "name": "polygon",
@@ -380,7 +386,8 @@
         "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
       },
       "composer": null,
-      "zap": null
+      "zap": null,
+      "coingeckoPlatform": "polygon-pos"
     },
     {
       "name": "avalanche",
@@ -424,7 +431,8 @@
         "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
       },
       "composer": null,
-      "zap": null
+      "zap": null,
+      "coingeckoPlatform": "avalanche"
     },
     {
       "name": "unichain",
@@ -465,7 +473,8 @@
       },
       "notes": "No Stargate pools: USDT lane rides USDT0, USDC lane rides CCTP only. Own LayerZero endpoint address (not the canonical 0x1a44).",
       "composer": null,
-      "zap": null
+      "zap": null,
+      "coingeckoPlatform": "unichain"
     },
     {
       "name": "sei",
@@ -492,7 +501,8 @@
       "venues": {},
       "notes": "Bridge-only until a venue is verified (DragonSwap is the local DEX). USDT0's Sei OFT wraps a different token than Stargate's USDT, so the USDT lane rides Stargate.",
       "composer": null,
-      "zap": null
+      "zap": null,
+      "coingeckoPlatform": "sei-v2"
     },
     {
       "name": "mantle",
@@ -519,7 +529,8 @@
       "venues": {},
       "notes": "Bridge-only until a venue is verified (Agni/FusionX are V3 forks to vet). USDT0's Mantle OFT wraps a different token than Stargate's USDT, so the USDT lane rides Stargate. No CCTP.",
       "composer": null,
-      "zap": null
+      "zap": null,
+      "coingeckoPlatform": "mantle"
     },
     {
       "name": "plasma",
@@ -541,7 +552,8 @@
       "venues": {},
       "notes": "USDT0-only, bridge-only, own LayerZero endpoint address. Native USDC/CCTP not configured (no verified native USDC).",
       "composer": null,
-      "zap": null
+      "zap": null,
+      "coingeckoPlatform": "plasma"
     }
   ],
   "cctp": {
