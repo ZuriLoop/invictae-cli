@@ -47,6 +47,17 @@ Configuration: copy `.env.example` to `.env` — public RPC fallbacks work out o
 | `balances` / `refunds` / `history` | Account views; `refunds --claim` pays out escrowed refunds. |
 | `doctor` | Live verification of every configured chain: RPC identity, LayerZero endpoints, each bridge's wrapped token, venue router/quoter pairing, and deployed-contract wiring. Non-zero exit for CI. |
 
+## Tickers, addresses, chains
+
+Token inputs (`--pay`, `--token-out`) accept, in order of trust:
+
+1. **`eth` / `native`** — the chain's native coin (wrapped automatically; delivery unwraps). Wrapped symbols (`WETH`, `WBNB`, `WAVAX`, …) resolve to the wrapped ERC-20.
+2. **Registry tickers** — `config/tokens.json`, 103 entries across the 12 chains (majors, Ondo tokenized stocks, xStocks), every address verified on-chain before it enters the file. Regenerate with `node scripts/build-registry.mjs`.
+3. **Any other ticker** — resolved live via CoinGecko by exact symbol, then **re-verified against the contract's own `symbol()`**; a mismatch refuses and asks for the address. A fallback-resolved ticker is always displayed with its full address in the summary — read it before confirming.
+4. **A raw ERC-20 address** — always works, no lookups.
+
+Chain inputs (`--from`, `--to`, `--chain`) accept names (`base`), aliases (`eth`, `bsc`, `arb`, `op`, `matic`, `avax`, `hype`, `uni`), numeric chain ids (`8453`), and LayerZero EIDs (`30184`).
+
 ## Chains
 
 Ethereum, BNB Chain, Base, Arbitrum, Optimism, HyperEVM, Polygon, Avalanche, Unichain, Sei, Mantle, Plasma. Rails and venues per chain live in `config/chains.json`; every address in it is verifiable with `invictae doctor`, which checks the live chain, not this repo's claims.
