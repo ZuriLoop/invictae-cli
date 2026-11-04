@@ -146,7 +146,7 @@ const CHAIN_ALIASES: Record<string, string> = {
     uni: 'unichain',
 }
 
-/** Accepts a chain name, a common alias, a numeric chainId, or a LayerZero EID. */
+/** Accepts a chain name, a common alias, a numeric chainId, or an endpoint id. */
 export function getChain(config: ChainsConfig, nameOrId: string | number): Chain {
     const q = String(nameOrId).trim().toLowerCase()
     if (/^\d+$/.test(q)) {
@@ -217,14 +217,18 @@ export function encodePath(tokens: string[], fees: number[]): string {
     return ethers.utils.solidityPack(types, values)
 }
 
-/** LayerZero options: receive gas top-up + compose gas (+ optional native value). */
+/** Messaging options: receive gas top-up + compose gas (+ optional native value).
+ *  Hand-rolled type-3 executor options (validated byte-for-byte against the
+ *  reference SDK): 0x0003 | [worker 0x01, size, type 0x01, gas u128] |
+ *  [worker 0x01, size, type 0x03, index u16, gas u128, (value u128)]. */
 export function composeOptions(composeGas: number, composeValue: ethers.BigNumberish = 0): string {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { Options } = require('@layerzerolabs/lz-v2-utilities')
-    return Options.newOptions()
-        .addExecutorLzReceiveOption(300_000, 0)
-        .addExecutorComposeOption(0, composeGas, ethers.BigNumber.from(composeValue).toString())
-        .toHex()
+    const u128 = (v: ethers.BigNumberish) => ethers.utils.hexZeroPad(ethers.BigNumber.from(v).toHexString(), 16).slice(2)
+    const u16 = (v: number) => ethers.utils.hexZeroPad(ethers.BigNumber.from(v).toHexString(), 2).slice(2)
+    const value = ethers.BigNumber.from(composeValue)
+    const receiveOpt = '01' + u16(17) + '01' + u128(300_000)
+    const composeParams = '03' + u16(0) + u128(composeGas) + (value.isZero() ? '' : u128(value))
+    const composeOpt = '01' + u16(composeParams.length / 2) + composeParams
+    return '0x0003' + receiveOpt + composeOpt
 }
 
 export const ERC20_ABI = [

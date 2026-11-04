@@ -9,7 +9,7 @@ import { getChain, loadConfig, provider, ZAP_ABI, type Chain, type ChainsConfig 
 
 export type SwapStepName =
     | 'source_confirmed'
-    | 'bridging' // OFT rail: LayerZero in flight
+    | 'bridging' // OFT rail: bridge in flight
     | 'attesting' // CCTP rail: waiting on Circle
     | 'attested' // CCTP rail: ready to relay / relaying
     | 'delivered' // funds arrived at the destination composer
@@ -202,7 +202,7 @@ export async function trackSwap(
         }
         emit({ step: 'attested', state: 'done', rail, detail: 'Circle attested the burn — relayer completing the swap', at: Date.now() })
     } else {
-        emit({ step: 'bridging', state: 'active', rail, detail: 'LayerZero delivering (~1–3 min)', at: Date.now() })
+        emit({ step: 'bridging', state: 'active', rail, detail: 'bridge delivering (~1–3 min)', at: Date.now() })
         let delivered = false
         let dstTx: string | undefined
         while (!delivered && !expired()) {
@@ -217,14 +217,14 @@ export async function trackSwap(
                     delivered = true
                     dstTx = m?.destination?.tx?.txHash
                 } else if (status === 'FAILED' || status === 'BLOCKED') {
-                    emit({ step: 'bridging', state: 'failed', rail, detail: `LayerZero reports ${status} — retry via layerzeroscan.com`, at: Date.now(), final: true })
+                    emit({ step: 'bridging', state: 'failed', rail, detail: `bridge reports ${status} — delivery can be retried`, at: Date.now(), final: true })
                     return
                 }
             }
             if (!delivered) await sleep()
         }
         if (!delivered) {
-            emit({ step: 'timeout', state: 'failed', rail, detail: 'LayerZero delivery did not complete in time', at: Date.now(), final: true })
+            emit({ step: 'timeout', state: 'failed', rail, detail: 'bridge delivery did not complete in time', at: Date.now(), final: true })
             return
         }
         emit({ step: 'delivered', state: 'done', rail, detail: 'funds arrived on the destination', txHash: dstTx, at: Date.now() })

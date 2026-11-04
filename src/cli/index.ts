@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * invictae — cross-chain swaps on LayerZero.
+ * invictae — cross-chain swaps.
  *
  * Trading        quote · swap
  * Lifecycle      watch · status · relay
@@ -27,7 +27,7 @@ const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.js
 const program = new Command()
 program
     .name('invictae')
-    .description('Cross-chain swaps on LayerZero — stables, native coins, blue chips, tokenized stocks')
+    .description('Cross-chain swaps — stables, native coins, blue chips, tokenized stocks')
     .version(pkg.version, '-v, --version')
     .addHelpText(
         'after',
@@ -55,7 +55,7 @@ program
                 stderr: 'progress, spinners, and warnings — never parse it',
                 exitCodes: { '0': 'success', '1': 'error or failed checks' },
                 tokens: "tickers (registry first, CoinGecko fallback re-verified on-chain), 'eth'/'native', wrapped symbols, or ERC-20 addresses",
-                chains: 'names, aliases (eth,bsc,arb,op,matic,avax,hype,uni), chain ids, or LayerZero EIDs',
+                chains: 'names, aliases (eth,bsc,arb,op,matic,avax,hype,uni), chain ids, or endpoint ids',
                 positional: 'quote/swap accept: AMOUNT TOKEN@CHAIN TOKEN@CHAIN',
                 nonInteractive: 'swap requires --yes when stdin is not a TTY or --json is passed; --dry-run never signs',
             },

@@ -12,7 +12,7 @@ This CLI is designed to be driven by AI agents and scripts. Read this once; `inv
 ## Inputs
 
 - **Tokens** (`--pay`, `--token-out`): a ticker (curated registry first, then a live CoinGecko fallback that is re-verified against the contract's on-chain `symbol()` — check `payVia`/`outVia` in the JSON: the value `coingecko` means you should confirm `payToken`/`tokenOutResolved` is the contract you intend), `eth`/`native`, a wrapped symbol (`WETH`, `WBNB`, …), or an ERC-20 address. Addresses are always the unambiguous choice.
-- **Chains** (`--from`, `--to`, `--chain`): names (`base`), aliases (`eth`, `bsc`, `arb`, `op`, `matic`, `avax`, `hype`, `uni`), chain ids (`8453`), or LayerZero EIDs (`30184`).
+- **Chains** (`--from`, `--to`, `--chain`): names (`base`), aliases (`eth`, `bsc`, `arb`, `op`, `matic`, `avax`, `hype`, `uni`), chain ids (`8453`), or endpoint ids (`30184`).
 - **Positional shorthand:** `invictae quote 100 usdc@base eth@arbitrum` ≡ `--amount 100 --pay usdc --from base --token-out eth --to arbitrum`.
 
 ## Recipes

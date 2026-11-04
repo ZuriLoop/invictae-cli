@@ -261,7 +261,7 @@
           "notes": "The deep venue on HyperEVM (USDT0/WHYPE ~$290k in the 0.05% pool). Quoter is nonstandard \u2014 wire it before routing here."
         }
       },
-      "notes": "USDT lane only (no Stargate). Own LayerZero endpoint address.",
+      "notes": "USDT lane only (no Stargate). Own messaging endpoint address.",
       "composer": null,
       "zap": null,
       "wrappedNative": "0x5555555555555555555555555555555555555555",
@@ -471,7 +471,7 @@
         "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
         "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
       },
-      "notes": "No Stargate pools: USDT lane rides USDT0, USDC lane rides CCTP only. Own LayerZero endpoint address (not the canonical 0x1a44).",
+      "notes": "No Stargate pools: USDT lane rides USDT0, USDC lane rides CCTP only. Own messaging endpoint address (not the canonical 0x1a44).",
       "composer": null,
       "zap": null,
       "coingeckoPlatform": "unichain"
@@ -550,7 +550,7 @@
         }
       },
       "venues": {},
-      "notes": "USDT0-only, bridge-only, own LayerZero endpoint address. Native USDC/CCTP not configured (no verified native USDC).",
+      "notes": "USDT0-only, bridge-only, own messaging endpoint address. Native USDC/CCTP not configured (no verified native USDC).",
       "composer": null,
       "zap": null,
       "coingeckoPlatform": "plasma"

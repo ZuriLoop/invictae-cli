@@ -8,7 +8,7 @@ import { c, emitJson, note, spinner } from '../ui'
 
 const STEP_LABELS: Record<string, string> = {
     source_confirmed: 'source confirmed',
-    bridging: 'bridging (LayerZero)',
+    bridging: 'bridging',
     attesting: 'attesting (Circle)',
     attested: 'attested',
     delivered: 'delivered',
@@ -40,7 +40,7 @@ export function registerTrack(program: Command): void {
 
     program
         .command('status')
-        .description("One-shot answer to where's my money (LayerZero Scan + Circle Iris)")
+        .description("One-shot answer to where's my money across the bridge explorers")
         .requiredOption('--from <chain>', 'source chain of the transaction')
         .requiredOption('--tx <hash>', 'source-chain transaction hash')
         .option('--json', 'print the status as one JSON object', false)
@@ -58,7 +58,7 @@ export function registerTrack(program: Command): void {
                             return
                         }
                         for (const m of body.data!) {
-                            console.log(`LayerZero: ${c.bold(m.status?.name ?? 'unknown')} dstEid=${m.pathway?.dstEid ?? '?'}  ${c.dim(`https://layerzeroscan.com/tx/${opts.tx}`)}`)
+                            console.log(`bridge: ${c.bold(m.status?.name ?? 'unknown')} dstEid=${m.pathway?.dstEid ?? '?'}  ${c.dim('follow live with: invictae watch')}`)
                         }
                         return
                     }
@@ -86,7 +86,7 @@ export function registerTrack(program: Command): void {
                 }
             }
             if (opts.json) emitJson({ rail: null, messages: [] })
-            else note('No LayerZero message or CCTP burn found for that tx (yet) — wrong chain, or still indexing.')
+            else note('No bridge message or CCTP burn found for that tx (yet) — wrong chain, or still indexing.')
         })
 
     program

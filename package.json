@@ -1,7 +1,7 @@
 {
   "name": "invictae",
   "version": "0.1.0",
-  "description": "Cross-chain swap CLI on LayerZero — stables, native coins, blue chips, and tokenized stocks across 12 chains",
+  "description": "Cross-chain swap CLI \u2014 stables, native coins, blue chips, and tokenized stocks across 12 chains",
   "license": "MIT",
   "author": "ZuriLoop",
   "repository": {
@@ -27,7 +27,6 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@layerzerolabs/lz-v2-utilities": "^3.0.86",
     "commander": "^11.1.0",
     "dotenv": "^16.4.5",
     "ethers": "^5.7.2"

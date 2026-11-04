@@ -46,9 +46,9 @@ async function checkChain(chain: Chain, human: boolean): Promise<Check[]> {
         return checks
     }
 
-    // LayerZero endpoint
-    if ((await p.getCode(chain.lzEndpoint)) === '0x') report('fail', `LayerZero endpoint has no code at ${chain.lzEndpoint}`)
-    else report('ok', 'LayerZero endpoint present')
+    // messaging endpoint
+    if ((await p.getCode(chain.lzEndpoint)) === '0x') report('fail', `messaging endpoint has no code at ${chain.lzEndpoint}`)
+    else report('ok', 'messaging endpoint present')
 
     // Bridges deliver the configured stables
     for (const [name, bridge] of Object.entries(chain.bridges)) {

@@ -111,7 +111,7 @@ async function describe(prep: Prepared, opts: Record<string, unknown>): Promise<
     ])
     rows.push([
         'rail',
-        prep.rail === 'cctp' ? c.cyan('CCTP v2 — lossless, relayer completes') : c.cyan(`LayerZero OFT (${prep.bridgeSrc.slice(0, 10)}…)`),
+        prep.rail === 'cctp' ? c.cyan('CCTP v2 — lossless, relayer completes') : c.cyan(`token bridge (${prep.bridgeSrc.slice(0, 10)}…)`),
     ])
     if (prep.srcRoute) rows.push(['source swap', `${prep.srcRoute.venue} (tier ${prep.srcRoute.tier})`])
     rows.push(['arrives', `~${ethers.utils.formatUnits(prep.dstReceived, prep.dstStableDecimals)} ${prep.stableKey.toUpperCase()}`])
@@ -132,7 +132,7 @@ async function describe(prep: Prepared, opts: Record<string, unknown>): Promise<
     }
     rows.push([
         'bridge fee',
-        prep.rail === 'oft' ? `${ethers.utils.formatEther(prep.lzFeeNative)} native (LayerZero)` : 'none (standard finality ~1–15 min)',
+        prep.rail === 'oft' ? `${ethers.utils.formatEther(prep.lzFeeNative)} native` : 'none (standard finality ~1–15 min)',
     ])
     return rows
 }
